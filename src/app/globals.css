@@ -1,0 +1,287 @@
+:root {
+  --primary: #c62828; /* Stashup Deep Red */
+  --primary-gradient: linear-gradient(135deg, #e53935 0%, #b71c1c 100%);
+  --sidebar-bg: #b71c1c; 
+  --bg-color: #f4f5f9; /* Mobile light background */
+  --card-bg: #ffffff;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --radius: 16px;
+  --border-color: #e5e7eb;
+  
+  --success: #10b981;
+  --warning: #f59e0b;
+  --bottom-nav-bg: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Base Utility Classes */
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+/* Mobile Layout Wrapper */
+.mobile-layout {
+  max-width: 480px; /* Force mobile width on desktop */
+  margin: 0 auto;
+  background-color: var(--bg-color);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+/* Mobile Header */
+.mobile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--primary); /* Stashup Red Header */
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  color: white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.header-btn {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.header-btn:active {
+  background: rgba(255,255,255,0.3);
+}
+
+/* Main Dashboard Area */
+.mobile-content {
+  padding: 16px;
+  padding-bottom: 90px; /* Space for bottom nav */
+}
+
+/* Main Red Dashboard Card */
+.main-balance-card {
+  background: var(--primary-gradient);
+  border-radius: 20px;
+  padding: 20px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 24px;
+  box-shadow: 0 10px 15px -3px rgba(198, 40, 40, 0.4);
+}
+.balance-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.balance-avatar {
+  background: rgba(255,255,255,0.2);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.balance-amounts {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.balance-actions {
+  display: flex;
+  gap: 12px;
+}
+.btn-withdraw {
+  background: #111827;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  border: none;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-request {
+  background: #fbbf24;
+  color: #92400e;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  border: none;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Sub Card Layout (Group Savings, Life Savings) */
+.sub-card {
+  background: white;
+  padding: 16px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+.card-icon-box {
+  width: 48px;
+  height: 48px;
+  background: var(--bg-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Bottom Nav */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  max-width: 480px; /* Constrain to mobile width */
+  background: white;
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 10px 24px 10px;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  z-index: 1000;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  flex: 1;
+}
+.nav-item.active {
+  color: var(--primary);
+}
+.fab-container {
+  position: relative;
+  top: -24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.fab-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--primary-gradient);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 16px rgba(198, 40, 40, 0.4);
+  border: 4px solid var(--bg-color);
+  margin-bottom: 4px;
+}
+
+/* Off-canvas Sidebar */
+.offcanvas-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  visibility: hidden;
+  opacity: 0;
+  transition: all 0.3s;
+}
+.offcanvas-overlay.open {
+  visibility: visible;
+  opacity: 1;
+}
+.offcanvas-menu {
+  position: absolute;
+  top: 0; left: -100%; bottom: 0;
+  width: 80%;
+  max-width: 320px;
+  background: var(--sidebar-bg);
+  background-image: linear-gradient(180deg, #c62828 0%, #b71c1c 100%);
+  z-index: 101;
+  transition: left 0.3s ease;
+  color: white;
+  flex-direction: column;
+  display: flex;
+}
+.offcanvas-menu.open {
+  left: 0;
+}
+.sidebar-user {
+  background: rgba(255,255,255,0.1);
+  margin: 16px;
+  padding: 16px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sidebar-links {
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px;
+}
+.sidebar-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  color: rgba(255,255,255,0.9);
+  font-weight: 500;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 1.05rem;
+}
+.sidebar-link-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}

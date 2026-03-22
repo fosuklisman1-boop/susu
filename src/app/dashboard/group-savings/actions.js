@@ -1,0 +1,237 @@
+'use server'
+
+import { createClient } from '@/utils/supabase/server'
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+
+function generateInviteCode() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase()
+}
+
+/**
+ * GROUP SAVINGS LOGIC
+ * 
+ * 1. ROTATING (ROSCA - Rotating Savings & Credit Association):
+ *    - All members contribute the same fixed amount each period (weekly/monthly)
+ *    - The total pot (members × contribution) is paid out to ONE member per cycle
+ *    - Order of payout rotates through all members until everyone has received once
+ *    - Example: 5 members × GHS 200/month = GHS 1,000 pot. 
+ *               Month 1 → Member A gets GHS 1,000
+ *               Month 2 → Member B gets GHS 1,000 ... etc.
+ *
+ * 2. CONTRIBUTION (Shared Pot):
+ *    - All members contribute freely toward a shared collective goal
+ *    - The total amount pooled together reaches the group's target
+ *    - Used for a shared purpose (e.g. group vacation, event, common purchase)
+ *    - Example: 10 members targeting GHS 5,000 total, each contributes what they can
+ *
+ * 3. CHALLENGE (Public Group Challenge):
+ *    - Each member individually saves toward the same personal goal amount
+ *    - All members can see each other's progress (motivational/competitive)
+ *    - Example: 20 members each targeting GHS 1,000 by end of year
+ */
+
+export async function createGroup(prevState, formData) {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const groupType = formData.get('group_type')
+  const name = formData.get('name')?.trim()
+  const targetAmount = formData.get('target_amount') || null
+  const contributionAmount = formData.get('contribution_amount') || null
+  const frequency = formData.get('frequency') || null
+  const maxMembers = formData.get('max_members') || null
+  const payoutMethod = formData.get('payout_method') || null
+  const startDate = formData.get('startDate') || null
+  const endDate = formData.get('endDate') || null
+  const isFixed = formData.get('is_fixed_contribution') === 'true'
+  const minAmount = formData.get('min_contribution_amount') || 0
+
+  if (!name || !groupType) {
+    return { error: 'Please provide a group name and savings type.' }
+  }
+
+  // Rotating groups need a contribution amount
+  if (groupType === 'rotating' && !contributionAmount) {
+    return { error: 'Please enter the amount required per member.' }
+  }
+
+  // Non-rotating groups need a target amount
+  if (['contribution', 'challenge'].includes(groupType) && !targetAmount) {
+    return { error: 'Please enter the expected goal amount.' }
+  }
+
+  const inviteCode = generateInviteCode()
+
+  const { data: newGroup, error: groupError } = await supabase
+    .from('savings_groups')
+    .insert({
+      name,
+      group_type: groupType,
+      target_amount: targetAmount,
+      contribution_amount: contributionAmount,
+      frequency,
+      max_members: maxMembers ? Number(maxMembers) : null,
+      payout_method: payoutMethod,
+      start_date: startDate,
+      end_date: endDate,
+      is_fixed_contribution: isFixed,
+      min_contribution_amount: minAmount,
+      invite_code: inviteCode,
+      created_by: user.id
+    })
+    .select()
+    .single()
+
+  if (groupError || !newGroup) {
+    console.error('Failed to create group', groupError)
+    return { error: `Could not create group: ${groupError?.message}` }
+  }
+
+  const { error: memberError } = await supabase.from('group_members').insert({
+    group_id: newGroup.id,
+    user_id: user.id,
+    role: 'admin'
+  })
+
+  if (memberError) {
+    return { error: 'Group created but could not add you as admin.' }
+  }
+
+  revalidatePath('/dashboard/group-savings')
+  return { success: true, groupId: newGroup.id, inviteCode, groupType, name }
+}
+
+export async function joinGroup(prevState, formData) {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const inviteCode = formData.get('invite_code')?.toUpperCase()?.trim()
+
+  if (!inviteCode) return { error: 'Please enter an invite code.' }
+
+  const { data: group, error: findError } = await supabase
+    .from('savings_groups')
+    .select('id, name')
+    .eq('invite_code', inviteCode)
+    .single()
+
+  if (findError || !group) {
+    return { error: `No group found with code "${inviteCode}". Please check and try again.` }
+  }
+
+  // Check if already a member
+  const { data: existing } = await supabase
+    .from('group_members')
+    .select('role')
+    .eq('group_id', group.id)
+    .eq('user_id', user.id)
+    .single()
+
+  if (existing) {
+    return { error: existing.role === 'admin'
+      ? `You created this group — you are already the admin.`
+      : `You are already a member of "${group.name}".`
+    }
+  }
+
+  const { error: joinError } = await supabase.from('group_members').insert({
+    group_id: group.id,
+    user_id: user.id,
+    role: 'member'
+  })
+
+  if (joinError && joinError.code !== '23505') {
+    return { error: 'Could not join group. Please try again.' }
+  }
+
+  revalidatePath('/dashboard/group-savings')
+  return { success: true, groupId: group.id, groupName: group.name }
+}
+
+export async function updateGroup(prevState, formData) {
+  const supabase = await createClient()
+  console.log('--- START updateGroup ACTION ---')
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const groupId = formData.get('groupId')
+  const name = formData.get('name')
+  const targetAmount = formData.get('target_amount')
+  const contributionAmount = formData.get('contribution_amount')
+  const frequency = formData.get('frequency')
+  const maxMembers = formData.get('max_members')
+  const payoutMethod = formData.get('payout_method')
+  const isFixedRaw = formData.get('is_fixed_contribution')
+  const isFixed = isFixedRaw === 'true' || isFixedRaw === 'on' || isFixedRaw === true
+  const minAmount = formData.get('min_contribution_amount') || 0
+
+  if (!groupId || !name) {
+    return { error: 'Group ID and Name are required.' }
+  }
+
+  // Verify Admin or Creator
+  const { data: group, error: fetchError } = await supabase
+    .from('savings_groups')
+    .select('created_by')
+    .eq('id', groupId)
+    .single()
+
+  console.log('AUTH CHECK - GROUP:', { group, fetchError, userId: user.id })
+
+  if (fetchError || !group) return { error: 'Group not found.' }
+
+  const { data: member } = await supabase
+    .from('group_members')
+    .select('role')
+    .eq('group_id', groupId)
+    .eq('user_id', user.id)
+    .single()
+
+  console.log('AUTH CHECK - MEMBER:', { member })
+
+  const isAuthorized = group.created_by === user.id || member?.role === 'admin'
+
+  if (!isAuthorized) {
+    console.log('AUTHORIZATION FAILED')
+    return { error: 'Only administrators can update group settings.' }
+  }
+
+  const updateFields = {
+    name,
+    target_amount: (targetAmount !== '' && targetAmount !== null) ? Number(targetAmount) : null,
+    contribution_amount: (contributionAmount !== '' && contributionAmount !== null) ? Number(contributionAmount) : null,
+    frequency,
+    max_members: (maxMembers !== '' && maxMembers !== null) ? Number(maxMembers) : null,
+    payout_method: payoutMethod,
+    is_fixed_contribution: isFixed,
+    min_contribution_amount: (minAmount !== '' && minAmount !== null) ? Number(minAmount) : 0,
+    updated_at: new Date().toISOString()
+  }
+
+  console.log('UPDATING GROUP FIELDS:', updateFields)
+
+  const { data: updateData, error: updateError } = await supabase
+    .from('savings_groups')
+    .update(updateFields)
+    .eq('id', groupId)
+    .select()
+
+  if (updateError) {
+    console.error('Update group error:', updateError)
+    return { error: 'Failed to update group. Please try again.' }
+  }
+
+  console.log('UPDATE SUCCESSFUL:', updateData)
+
+  revalidatePath(`/dashboard/group-savings/${groupId}`)
+  revalidatePath(`/dashboard/group-savings/${groupId}/settings`)
+  revalidatePath('/dashboard/group-savings')
+
+  return { success: true }
+}
