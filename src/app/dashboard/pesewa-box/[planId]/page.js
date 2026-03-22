@@ -33,23 +33,34 @@ export default async function PesewasBoxPlanPage({ params }) {
   const freqLabel = freqLabels[plan.frequency] || 'Payment'
 
   const slots = []
+  let pastExpected = 0
   if (plan.frequency !== 'flex') {
     let cursor = new Date(startDate)
     const stepDays = plan.frequency === 'daily' ? 1 : plan.frequency === 'weekly' ? 7 : 30
     const planEnd = endDate || new Date(startDate.getTime() + plan.duration_days * 86400000)
     let slotIndex = 1
+    const fullyPaidSlotsCount = Math.floor(totalSaved / periodicAmount)
+
     while (cursor <= planEnd) {
       const dueDate = new Date(cursor)
       const slotDateStr = dueDate.toISOString().split('T')[0]
       const isPast = dueDate < today
-      slots.push({ index: slotIndex++, dueDate: slotDateStr, amount: periodicAmount, status: isPast ? 'Overdue' : 'Pending' })
+      
+      let status = 'Pending'
+      if (slotIndex <= fullyPaidSlotsCount) {
+        status = 'Paid'
+      } else if (isPast) {
+        status = 'Overdue'
+      }
+
+      if (isPast) pastExpected += periodicAmount
+
+      slots.push({ index: slotIndex++, dueDate: slotDateStr, amount: periodicAmount, status })
       cursor.setDate(cursor.getDate() + stepDays)
     }
   }
 
-  const dueSlots = slots.filter(s => s.status === 'Overdue')
-  const totalExpected = dueSlots.length * periodicAmount
-  const overdueAmount = Math.max(0, totalExpected - totalSaved)
+  const overdueAmount = Math.max(0, pastExpected - totalSaved)
   const visibleSlots = [...slots.filter(s => s.status === 'Overdue'), ...slots.filter(s => s.status === 'Pending').slice(0, 5)]
 
   // Still fetch contributions for the history list
