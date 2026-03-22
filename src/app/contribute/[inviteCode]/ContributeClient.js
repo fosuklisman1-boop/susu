@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Heart, Users, Share2, Check } from 'lucide-react'
+import UnifiedPaymentModal from '@/components/UnifiedPaymentModal'
 
 export default function ContributeClient({ group, totalRaised, targetAmount, progressPct, recentContributors }) {
   const [name, setName] = useState('')

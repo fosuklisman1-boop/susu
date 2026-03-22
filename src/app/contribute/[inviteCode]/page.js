@@ -11,7 +11,7 @@ export default async function PublicContributePage({ params }) {
     .from('savings_groups')
     .select('id, name, group_type, target_amount, invite_code')
     .eq('invite_code', inviteCode.toUpperCase())
-    .eq('group_type', 'contribution') // Only contribution groups support public links
+    .in('group_type', ['contribution', 'challenge']) // Support public links for both types
     .single()
 
   if (error || !group) return notFound()
