@@ -45,9 +45,8 @@ export default async function GroupDetailPage({ params }) {
     }, { onConflict: 'group_id,user_id' })
   }
 
-  // Fetch contributions (Using Service Role for debugging ONLY to rule out RLS)
-  const serviceSupabase = await createServiceRoleClient()
-  const { data: contributions, error: gcError } = await serviceSupabase
+  // Fetch contributions
+  const { data: contributions, error: gcError } = await supabase
     .from('group_contributions')
     .select('id, amount, status, contributor_name, contributor_email, inserted_at, user_id, group_id')
     .eq('group_id', groupId)
