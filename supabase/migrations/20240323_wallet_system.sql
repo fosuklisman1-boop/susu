@@ -25,10 +25,12 @@ CREATE TABLE IF NOT EXISTS wallets (
 ALTER TABLE wallets ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
+DROP POLICY IF EXISTS "Users can view their own personal wallet" ON wallets;
 CREATE POLICY "Users can view their own personal wallet" 
 ON wallets FOR SELECT 
 USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Group members can view their group wallet" ON wallets;
 CREATE POLICY "Group members can view their group wallet" 
 ON wallets FOR SELECT 
 USING (
@@ -38,6 +40,7 @@ USING (
 );
 
 -- Internal service role can do anything
+DROP POLICY IF EXISTS "Service role full access" ON wallets;
 CREATE POLICY "Service role full access" 
 ON wallets FOR ALL 
 USING (true) 
