@@ -86,17 +86,24 @@ export async function requestToPay({
   payeeNote,
   subscriptionKey,
   token,
-  referenceId // UUID V4
+  referenceId, // UUID V4
+  callbackUrl
 }) {
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'X-Reference-Id': referenceId,
+    'X-Target-Environment': 'sandbox',
+    'Content-Type': 'application/json',
+    'Ocp-Apim-Subscription-Key': subscriptionKey
+  };
+
+  if (callbackUrl) {
+    headers['X-Callback-Url'] = callbackUrl;
+  }
+
   const response = await fetch(`${MOMO_BASE_URL}/collection/v1_0/requesttopay`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'X-Reference-Id': referenceId,
-      'X-Target-Environment': 'sandbox',
-      'Content-Type': 'application/json',
-      'Ocp-Apim-Subscription-Key': subscriptionKey
-    },
+    headers,
     body: JSON.stringify({
       amount,
       currency,
@@ -125,17 +132,24 @@ export async function initiateTransfer({
   payeeNote,
   subscriptionKey,
   token,
-  referenceId
+  referenceId,
+  callbackUrl
 }) {
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'X-Reference-Id': referenceId,
+    'X-Target-Environment': 'sandbox',
+    'Content-Type': 'application/json',
+    'Ocp-Apim-Subscription-Key': subscriptionKey
+  };
+
+  if (callbackUrl) {
+    headers['X-Callback-Url'] = callbackUrl;
+  }
+
   const response = await fetch(`${MOMO_BASE_URL}/disbursement/v1_0/transfer`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'X-Reference-Id': referenceId,
-      'X-Target-Environment': 'sandbox',
-      'Content-Type': 'application/json',
-      'Ocp-Apim-Subscription-Key': subscriptionKey
-    },
+    headers,
     body: JSON.stringify({
       amount,
       currency,

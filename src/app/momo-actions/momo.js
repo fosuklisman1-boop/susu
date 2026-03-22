@@ -23,18 +23,20 @@ export async function createMomoPayment({ amount, phoneNumber, userId }) {
     // 2. Get Token
     const token = await getMomoToken('collection', subscriptionKey, apiUser, apiKey);
     const referenceId = uuidv4();
+    const callbackUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/momo/callback`;
 
     // 3. Request Payment
     const success = await requestToPay({
       amount: amount.toString(),
       currency: 'EUR', // Sandbox default
-      externalId: `pay-${Date.now()}`,
+      externalId: referenceId,
       payerNumber: phoneNumber,
       payerMessage: 'Susu Contribution',
       payeeNote: 'Stashup Savings',
       subscriptionKey,
       token,
-      referenceId
+      referenceId,
+      callbackUrl
     });
 
     if (success) {
@@ -74,17 +76,19 @@ export async function createMomoWithdrawal({ amount, phoneNumber, withdrawalId }
   try {
     const token = await getMomoToken('disbursement', subscriptionKey, apiUser, apiKey);
     const referenceId = uuidv4();
+    const callbackUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/api/momo/callback`;
 
     const success = await initiateTransfer({
       amount: amount.toString(),
       currency: 'EUR',
-      externalId: `wd-${withdrawalId}`,
+      externalId: referenceId,
       payeeNumber: phoneNumber,
       payerMessage: 'Stashup Withdrawal',
       payeeNote: 'Payout processed via MoMo',
       subscriptionKey,
       token,
-      referenceId
+      referenceId,
+      callbackUrl
     });
 
     if (success) {
