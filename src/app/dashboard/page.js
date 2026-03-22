@@ -19,18 +19,11 @@ export default async function DashboardPage() {
     .neq('plan_type', 'pesewa_challenge')
     .order('created_at', { ascending: false })
 
-  // Fetch contributions for all plans
-  let planSavings = {}
-  if (activePlans?.length) {
-    const { data: contributions } = await supabase
-      .from('contributions')
-      .select('plan_id, amount')
-      .in('plan_id', activePlans.map(p => p.id))
-      .eq('status', 'success')
-    contributions?.forEach(c => {
-      planSavings[c.plan_id] = (planSavings[c.plan_id] || 0) + Number(c.amount)
-    })
-  }
+  // Fetch contributions for all plans (Now using persistent current_balance)
+  let planSavings = {};
+  activePlans?.forEach(plan => {
+    planSavings[plan.id] = Number(plan.current_balance || 0);
+  });
 
   // 3. Fetch user's individual balance from the wallets table
   const { data: wallet } = await supabase

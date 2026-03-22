@@ -195,5 +195,117 @@ $$ LANGUAGE plpgsql;
 -- Ensure group_id exists on withdrawals (for existing DBs that might be out of sync with schema.sql)
 ALTER TABLE public.withdrawals ADD COLUMN IF NOT EXISTS group_id UUID REFERENCES public.savings_groups(id) ON DELETE CASCADE;
 
+-- Add current_balance to susu_plans if it doesn't exist
+ALTER TABLE public.susu_plans ADD COLUMN IF NOT EXISTS current_balance DECIMAL(12, 2) DEFAULT 0.00;
+
+-- Update the contribution trigger to also update plan balance
+CREATE OR REPLACE FUNCTION update_wallet_on_contribution()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Only act if status changed to 'success'
+    IF (TG_OP = 'INSERT' AND NEW.status = 'success') OR (TG_OP = 'UPDATE' AND OLD.status != 'success' AND NEW.status = 'success') THEN
+        -- 1. Update Personal Wallet
+        INSERT INTO wallets (user_id, balance)
+        VALUES (NEW.user_id, NEW.amount)
+        ON CONFLICT (user_id) DO UPDATE
+        SET balance = wallets.balance + EXCLUDED.balance,
+            updated_at = NOW();
+
+        -- 2. Update Plan Balance if plan_id exists
+        IF NEW.plan_id IS NOT NULL THEN
+            UPDATE susu_plans 
+            SET current_balance = current_balance + NEW.amount,
+                updated_at = NOW()
+            WHERE id = NEW.plan_id;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Refine Backfill to include Plan Balances
+CREATE OR REPLACE FUNCTION sync_wallets_initial()
+RETURNS void AS $$
+BEGIN
+    -- 1. Insert 0.00 balance wallets for ALL existing users
+    INSERT INTO wallets (user_id, balance)
+    SELECT id, 0.00
+    FROM auth.users
+    ON CONFLICT (user_id) DO NOTHING;
+
+    -- 2. Insert 0.00 balance wallets for ALL existing groups
+    INSERT INTO wallets (group_id, balance)
+    SELECT id, 0.00
+    FROM savings_groups
+    ON CONFLICT (group_id) DO NOTHING;
+
+    -- 3. Reset all Plan balances to 0 before backfill
+    UPDATE susu_plans SET current_balance = 0;
+
+    -- 4. Calculate and apply balances from Standard Contributions
+    -- Also syncs Plan balances
+    UPDATE wallets w
+    SET balance = w.balance + sub.total_in,
+        updated_at = NOW()
+    FROM (
+        SELECT user_id, plan_id, SUM(amount) as total_in
+        FROM contributions
+        WHERE status = 'success'
+        GROUP BY user_id, plan_id
+    ) sub
+    WHERE w.user_id = sub.user_id;
+
+    -- Backfill plan balances separately to handle multiple plans per user
+    UPDATE susu_plans p
+    SET current_balance = sub.total_in,
+        updated_at = NOW()
+    FROM (
+        SELECT plan_id, SUM(amount) as total_in
+        FROM contributions
+        WHERE status = 'success' AND plan_id IS NOT NULL
+        GROUP BY plan_id
+    ) sub
+    WHERE p.id = sub.plan_id;
+
+    -- 5. Calculate and apply balances from Group Contributions
+    UPDATE wallets w
+    SET balance = w.balance + sub.total_in,
+        updated_at = NOW()
+    FROM (
+        SELECT group_id, SUM(amount) as total_in
+        FROM group_contributions
+        WHERE status = 'success'
+        GROUP BY group_id
+    ) sub
+    WHERE w.group_id = sub.group_id;
+
+    -- 6. Subtract Withdrawals
+    -- For users
+    UPDATE wallets w
+    SET balance = w.balance - sub.total_out,
+        updated_at = NOW()
+    FROM (
+        SELECT user_id, SUM(amount) as total_out
+        FROM withdrawals
+        WHERE group_id IS NULL AND status IN ('pending', 'approved', 'completed')
+        GROUP BY user_id
+    ) sub
+    WHERE w.user_id = sub.user_id;
+
+    -- For groups
+    UPDATE wallets w
+    SET balance = w.balance - sub.total_out,
+        updated_at = NOW()
+    FROM (
+        SELECT group_id, SUM(amount) as total_out
+        FROM withdrawals
+        WHERE group_id IS NOT NULL AND status IN ('pending', 'approved', 'completed')
+        GROUP BY group_id
+    ) sub
+    WHERE w.group_id = sub.group_id;
+
+END;
+$$ LANGUAGE plpgsql;
+
 -- Run Sync
 SELECT sync_wallets_initial();
