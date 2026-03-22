@@ -164,7 +164,11 @@ export default function SettingsForm({ group }) {
             )}
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: '#6b7280', marginBottom: '8px' }}>PAYOUT EVERY (NUMBER OF DAYS)</label>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: '#6b7280', marginBottom: '8px' }}>
+              {group.group_type === 'rotating' ? 'PAYOUT EVERY (NUMBER OF DAYS)' : 
+               group.group_type === 'challenge' ? 'CHALLENGE DURATION (TOTAL DAYS)' : 
+               'CONTRIBUTION DURATION (TOTAL DAYS)'}
+            </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <input 
                 type="number" 
@@ -179,7 +183,7 @@ export default function SettingsForm({ group }) {
             </div>
             <p style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '8px' }}>
               <Info size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
-              Example: 7 for Weekly, 30 for Monthly, 1 for Daily.
+              {group.group_type === 'rotating' ? 'Example: 7 for Weekly, 30 for Monthly.' : 'Total number of days this group will be active.'}
             </p>
           </div>
 

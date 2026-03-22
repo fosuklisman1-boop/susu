@@ -153,6 +153,8 @@ export default function CreateGroupPage() {
                   <option value="cash">Cash</option>
                 </select>
               </div>
+              {/* Type-Specific Duration/Frequency is handled inside the blocks below */}
+
               <div>
                 <label style={labelStyle}>Payout Every (Number of Days)</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -160,9 +162,6 @@ export default function CreateGroupPage() {
                     value={fields.frequency} onChange={handle} style={{...inputStyle, flex: 1}} required />
                   <span style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: '600' }}>Days</span>
                 </div>
-                <p style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '6px' }}>
-                  e.g. 7 for Weekly, 30 for Monthly, 1 for Daily.
-                </p>
               </div>
               <div>
                 <label style={labelStyle}>Maximum Members (Total People)</label>
@@ -233,6 +232,14 @@ export default function CreateGroupPage() {
                 <input type="hidden" name="target_amount" value={fields.target_amount || '0'} />
               </div>
               <div>
+                <label style={labelStyle}>Contribution Duration (Total Days)</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input type="number" name="frequency" placeholder="30"
+                    value={fields.frequency} onChange={handle} style={{...inputStyle, flex: 1}} required />
+                  <span style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: '600' }}>Days</span>
+                </div>
+              </div>
+              <div>
                 <input type="date" name="startDate" value={fields.startDate || ''} onChange={handle}
                   placeholder="Choose a start date" style={{...inputStyle, color: fields.startDate ? '#111827' : '#9ca3af'}} />
               </div>
@@ -262,10 +269,20 @@ export default function CreateGroupPage() {
                   value={fields.target_amount} onChange={handle} style={inputStyle} required />
               </div>
               <div>
+                <label style={labelStyle}>Challenge Duration (Total Days)</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input type="number" name="frequency" placeholder="30"
+                    value={fields.frequency} onChange={handle} style={{...inputStyle, flex: 1}} required />
+                  <span style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: '600' }}>Days</span>
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>Start Date</label>
                 <input type="date" name="startDate" value={fields.startDate || ''} onChange={handle}
                   placeholder="Choose a start date" style={{...inputStyle, color: fields.startDate ? '#111827' : '#9ca3af'}} />
               </div>
               <div>
+                <label style={labelStyle}>End Date (Optional)</label>
                 <input type="date" name="endDate" value={fields.endDate || ''} onChange={handle}
                   placeholder="Choose Ending date" style={{...inputStyle, color: fields.endDate ? '#111827' : '#9ca3af'}} />
               </div>

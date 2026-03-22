@@ -377,9 +377,9 @@ export default async function GroupDetailPage({ params }) {
                       {isAdmin && !c.profiles?.full_name && (
                         <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{c.contributor_email || 'No email provided'}</p>
                       )}
-                      <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-                        {new Date(c.created_at).toLocaleDateString()}
-                      </span>
+                        <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                          {new Date(c.created_at).toLocaleDateString()}
+                        </span>
                     </div>
                     <p style={{ fontSize: '0.9rem', fontWeight: '700', color: '#16a34a' }}>+GHS {Number(c.amount).toFixed(2)}</p>
                   </div>
