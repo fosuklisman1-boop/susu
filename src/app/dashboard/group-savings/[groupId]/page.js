@@ -65,13 +65,23 @@ export default async function GroupDetailPage({ params }) {
     .in('status', ['pending', 'approved', 'completed', 'rejected'])
     .order('created_at', { ascending: false })
   
-  // Fetch actual Wallet balance
-  const { data: walletData } = await supabase
+  // Fetch actual Wallet balance - use maybeSingle to avoid PGRST116 error if missing
+  let { data: walletData, error: walletError } = await supabase
     .from('wallets')
     .select('balance')
     .eq('group_id', groupId)
-    .single()
+    .maybeSingle()
     
+  // AUTO-REPAIR: If no wallet exists for this group, create one
+  if (!walletData && !walletError) {
+    console.log(`[DEBUG] No wallet found for group ${groupId}. Initializing...`)
+    const { data: newWallet } = await supabase.from('wallets').insert({
+      group_id: groupId,
+      balance: 0
+    }).select('balance').single()
+    walletData = newWallet
+  }
+
   const availablePot = walletData?.balance || 0
 
   const targetAmount = Number(group.target_amount || 0)
