@@ -378,20 +378,6 @@ export default async function GroupDetailPage({ params }) {
                 </div>
               </>
             )}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ background: m.role === 'admin' ? '#fef2f2' : '#f0fdf4', color: m.role === 'admin' ? '#b91c1c' : '#16a34a', fontSize: '0.75rem', fontWeight: '600', padding: '4px 10px', borderRadius: '20px' }}>
-                      {m.role}
-                    </span>
-                    {m.user_id !== user.id && (
-                      <button title="Remove member"
-                        style={{ background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                        <UserMinus size={14} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
 
             {/* Admin: Danger Zone */}
             <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '16px', padding: '16px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
