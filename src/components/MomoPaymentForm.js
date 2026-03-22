@@ -19,29 +19,54 @@ export default function MomoPaymentForm({
   const [error, setError] = useState(null)
   const [referenceId, setReferenceId] = useState(null)
   const [pollCount, setPollCount] = useState(0)
+  const [isSyncing, setIsSyncing] = useState(false)
+
+  // Function to manually check status
+  const checkStatus = async () => {
+    if (!referenceId || isSyncing) return;
+    setIsSyncing(true);
+    try {
+      const result = await syncMomoTransaction('collection', referenceId);
+      console.log('Sync Result:', result);
+      if (result && result.status === 'SUCCESSFUL') {
+        setStatus('success');
+        if (onSuccess) setTimeout(onSuccess, 3000);
+      } else if (result && result.status === 'FAILED') {
+        setStatus('failed');
+        setError(result.reason || 'Transaction failed');
+      }
+    } catch (err) {
+      console.error('Manual sync error:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  }
 
   // Polling logic
   useEffect(() => {
     let interval;
     if (status === 'pending' && referenceId) {
       interval = setInterval(async () => {
+        setPollCount(prev => {
+          const next = prev + 1;
+          if (next > 40) { // Timeout after ~3.5 minutes
+            setStatus('failed');
+            setError('Transaction timed out. If you paid, please contact support with reference: ' + referenceId);
+            clearInterval(interval);
+          }
+          return next;
+        });
+
         try {
           const result = await syncMomoTransaction('collection', referenceId);
           if (result && result.status === 'SUCCESSFUL') {
             setStatus('success');
             clearInterval(interval);
-            if (onSuccess) setTimeout(onSuccess, 2000);
+            if (onSuccess) setTimeout(onSuccess, 3000);
           } else if (result && result.status === 'FAILED') {
             setStatus('failed');
             setError(result.reason || 'Transaction failed');
             clearInterval(interval);
-          }
-          
-          setPollCount(prev => prev + 1);
-          if (pollCount > 30) { // Timeout after 2.5 minutes
-             setStatus('failed');
-             setError('Transaction timed out. Please check your MoMo app.');
-             clearInterval(interval);
           }
         } catch (err) {
           console.error('Polling error:', err);
@@ -49,7 +74,7 @@ export default function MomoPaymentForm({
       }, 5000);
     }
     return () => clearInterval(interval);
-  }, [status, referenceId, pollCount, onSuccess]);
+  }, [status, referenceId, onSuccess]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -70,6 +95,7 @@ export default function MomoPaymentForm({
     if (result.success) {
       setReferenceId(result.referenceId);
       setStatus('pending');
+      setPollCount(0);
     } else {
       setStatus('idle');
       setError(result.error || 'Failed to initiate payment');
@@ -95,7 +121,7 @@ export default function MomoPaymentForm({
                 placeholder="23324XXXXXXX"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
-                style={{ width: '100%', padding: '14px 14px 14px 40px', borderRadius: '12px', border: '2px solid #e5e7eb', fontSize: '1rem', outline: 'none' }}
+                style={{ width: '100%', padding: '14px 14px 14px 40px', borderRadius: '12px', border: '2px solid #e5e7eb', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }}
                 required
               />
             </div>
@@ -118,16 +144,29 @@ export default function MomoPaymentForm({
       )}
 
       {status === 'pending' && (
-        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+        <div style={{ textAlign: 'center', padding: '30px 0' }}>
           <div style={{ position: 'relative', width: '60px', height: '60px', margin: '0 auto 20px' }}>
             <Loader2 className="animate-spin" size={60} color="#FDBE2C" />
             <Phone size={24} style={{ position: 'absolute', top: '18px', left: '18px', color: '#170b24' }} />
           </div>
           <h4 style={{ fontWeight: '800', marginBottom: '8px' }}>CHECK YOUR PHONE!</h4>
-          <p style={{ fontSize: '0.9rem', color: '#6b7280', lineHeight: '1.4' }}>
+          <p style={{ fontSize: '0.9rem', color: '#6b7280', lineHeight: '1.4', marginBottom: '24px' }}>
             We've sent a MoMo prompt to **{phoneNumber}**. <br/>
             Please enter your PIN to authorize **GHS {amount.toFixed(2)}**.
           </p>
+          
+          <button 
+            onClick={checkStatus}
+            disabled={isSyncing}
+            style={{ 
+              background: '#f3f4f6', border: 'none', borderRadius: '10px', padding: '12px 20px', 
+              fontSize: '0.9rem', fontWeight: '700', cursor: isSyncing ? 'wait' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', margin: '0 auto'
+            }}
+          >
+            {isSyncing ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />}
+            {isSyncing ? 'Verifying...' : 'I HAVE PAID'}
+          </button>
         </div>
       )}
 

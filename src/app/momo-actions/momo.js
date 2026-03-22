@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/utils/supabase/server';
+import { createClient, createServiceRoleClient } from '@/utils/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
 import { getMomoToken, requestToPay, initiateTransfer, getTransactionStatus } from '@/utils/momo';
 
@@ -128,35 +128,47 @@ export async function createMomoWithdrawal({ amount, phoneNumber, withdrawalId }
 }
 
 /**
- * Polls for transaction status
+ * Polls for transaction status and syncs with DB
  */
 export async function syncMomoTransaction(type, referenceId) {
-  const supabase = await createClient();
+  // Use Service Role to bypass RLS for status synchronization
+  const supabase = await createServiceRoleClient();
   
   const product = type === 'collection' ? 'COLLECTION' : 'DISBURSEMENT';
   const subscriptionKey = process.env[`MOMO_${product}_SUBSCRIPTION_KEY`];
   const apiUser = process.env[`MOMO_${product}_USER_ID`];
   const apiKey = process.env[`MOMO_${product}_API_KEY`];
 
-  const token = await getMomoToken(type, subscriptionKey, apiUser, apiKey);
-  const status = await getTransactionStatus(type, referenceId, subscriptionKey, token);
+  try {
+    const token = await getMomoToken(type, subscriptionKey, apiUser, apiKey);
+    const status = await getTransactionStatus(type, referenceId, subscriptionKey, token);
 
-  if (!status) return null;
+    if (!status) return null;
 
-  // Update DB based on status
-  if (status.status === 'SUCCESSFUL') {
+    // Determine DB statuses
+    const collectionStatus = status.status === 'SUCCESSFUL' ? 'success' : (status.status === 'FAILED' ? 'failed' : 'pending');
+    const withdrawalStatus = status.status === 'SUCCESSFUL' ? 'completed' : (status.status === 'FAILED' ? 'rejected' : 'pending');
+
+    // Update DB based on status
     if (type === 'collection') {
-      await supabase.from('contributions').update({ status: 'success' }).eq('reference', referenceId);
+       // Check standard contributions
+       await supabase.from('contributions')
+         .update({ status: collectionStatus, notes: status.reason || null })
+         .eq('reference', referenceId);
+       
+       // Check group contributions
+       await supabase.from('group_contributions')
+         .update({ status: collectionStatus, notes: status.reason || null })
+         .eq('provider_reference', referenceId);
     } else {
-      await supabase.from('withdrawals').update({ status: 'completed' }).eq('reference', referenceId);
+       await supabase.from('withdrawals')
+         .update({ status: withdrawalStatus, notes: status.reason || null })
+         .eq('reference', referenceId);
     }
-  } else if (status.status === 'FAILED') {
-    if (type === 'collection') {
-      await supabase.from('contributions').update({ status: 'failed' }).eq('reference', referenceId);
-    } else {
-      await supabase.from('withdrawals').update({ status: 'rejected', notes: status.reason || 'Failed' }).eq('reference', referenceId);
-    }
+
+    return status;
+  } catch (error) {
+    console.error('MoMo Sync Error:', error);
+    return null;
   }
-
-  return status;
 }
