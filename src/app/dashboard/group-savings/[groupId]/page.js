@@ -45,15 +45,16 @@ export default async function GroupDetailPage({ params }) {
     }, { onConflict: 'group_id,user_id' })
   }
 
-  // Fetch contributions
-  const { data: contributions, error: gcError } = await supabase
+  // Fetch contributions (Using Service Role for debugging ONLY to rule out RLS)
+  const serviceSupabase = await createServiceRoleClient()
+  const { data: contributions, error: gcError } = await serviceSupabase
     .from('group_contributions')
     .select('id, amount, status, contributor_name, contributor_email, inserted_at, user_id, group_id')
     .eq('group_id', groupId)
     .eq('status', 'success')
     .order('inserted_at', { ascending: false })
 
-  console.log(`[DEBUG] Group=${groupId} | User=${user.id} | GC_Count=${contributions?.length} | Error=${gcError?.message || 'none'}`)
+  console.log(`[DEBUG] GroupID=${groupId} | UserID=${user.id} | GC_Count=${contributions?.length} | Error=${gcError?.message || 'none'}`)
   
   const totalContributed = contributions?.reduce((sum, c) => sum + Number(c.amount), 0) || 0
   
