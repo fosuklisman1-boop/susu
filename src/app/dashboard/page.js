@@ -32,27 +32,14 @@ export default async function DashboardPage() {
     })
   }
 
-  // 3. Fetch user's individual contributions to any groups
-  const { data: grpContribs } = await supabase
-    .from('group_contributions')
-    .select('amount')
+  // 3. Fetch user's individual balance from the wallets table
+  const { data: wallet } = await supabase
+    .from('wallets')
+    .select('balance')
     .eq('user_id', user.id)
-    .eq('status', 'success')
-  
-  const totalInPlans = Object.values(planSavings).reduce((sum, v) => sum + v, 0)
-  const totalInGroups = (grpContribs || []).reduce((sum, c) => sum + Number(c.amount), 0)
-  const totalIn = totalInPlans + totalInGroups
+    .maybeSingle();
 
-  // 4. Fetch Withdrawals (pending, approved, completed)
-  const { data: withdrawals } = await supabase
-    .from('withdrawals')
-    .select('amount')
-    .eq('user_id', user.id)
-    .is('group_id', null) // Only personal withdrawals subtract from personal balance
-    .in('status', ['pending', 'approved', 'completed'])
-
-  const totalOut = (withdrawals || []).reduce((sum, w) => sum + Number(w.amount), 0)
-  const availableBalance = Math.max(totalIn - totalOut, 0)
+  const availableBalance = wallet?.balance ? Number(wallet.balance) : 0;
 
   return (
     <DashboardClient 

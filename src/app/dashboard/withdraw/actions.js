@@ -18,45 +18,24 @@ export async function createWithdrawal(prevState, formData) {
   if (!amount || amount <= 0) return { error: 'Please enter a valid amount' }
   if (!payoutDetails) return { error: 'Please provide payout details' }
 
-  let availableBalance = 0
+  let availableBalance = 0;
 
   if (groupId) {
-    // Group Withdrawal: Verify user is admin or creator
-    const { data: group } = await supabase
-      .from('savings_groups')
-      .select('created_by')
-      .eq('id', groupId)
-      .single()
-
-    const { data: member } = await supabase
-      .from('group_members')
-      .select('role')
-      .eq('group_id', groupId)
-      .eq('user_id', user.id)
-      .single()
-
-    const isAuthorized = group?.created_by === user.id || member?.role === 'admin'
-
-    if (!isAuthorized) {
-      return { error: 'Admin access required for group withdrawals' }
+    // 1a. Group Withdrawal Auth
+    const { data: group } = await supabase.from('savings_groups').select('created_by').eq('id', groupId).single();
+    const { data: member } = await supabase.from('group_members').select('role').eq('group_id', groupId).eq('user_id', user.id).single();
+    
+    if (group?.created_by !== user.id && member?.role !== 'admin') {
+      return { error: 'Admin access required for group withdrawals' };
     }
 
-    // Calculate Group Balance
-    const { data: grpPot } = await supabase.from('group_contributions').select('amount').eq('group_id', groupId).eq('status', 'success')
-    const { data: grpWithdrawals } = await supabase.from('withdrawals').select('amount').eq('group_id', groupId).in('status', ['pending', 'approved', 'completed'])
-
-    const totalIn = (grpPot || []).reduce((sum, c) => sum + Number(c.amount), 0)
-    const totalOut = (grpWithdrawals || []).reduce((sum, w) => sum + Number(w.amount), 0)
-    availableBalance = Math.max(totalIn - totalOut, 0)
+    // 1b. Get Group Wallet Balance
+    const { data: wallet } = await supabase.from('wallets').select('balance').eq('group_id', groupId).maybeSingle();
+    availableBalance = wallet?.balance ? Number(wallet.balance) : 0;
   } else {
-    // User Withdrawal: Calculate Personal Balance
-    const { data: stdContribs } = await supabase.from('contributions').select('amount').eq('user_id', user.id).eq('status', 'success')
-    const { data: grpContribs } = await supabase.from('group_contributions').select('amount').eq('user_id', user.id).eq('status', 'success')
-    const { data: userWithdrawals } = await supabase.from('withdrawals').select('amount').eq('user_id', user.id).is('group_id', null).in('status', ['pending', 'approved', 'completed'])
-
-    const totalIn = [...(stdContribs || []), ...(grpContribs || [])].reduce((sum, c) => sum + Number(c.amount), 0)
-    const totalOut = (userWithdrawals || []).reduce((sum, w) => sum + Number(w.amount), 0)
-    availableBalance = Math.max(totalIn - totalOut, 0)
+    // 1c. Get Personal Wallet Balance
+    const { data: wallet } = await supabase.from('wallets').select('balance').eq('user_id', user.id).maybeSingle();
+    availableBalance = wallet?.balance ? Number(wallet.balance) : 0;
   }
 
   if (amount > availableBalance) {
