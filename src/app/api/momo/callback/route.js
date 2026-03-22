@@ -6,6 +6,14 @@ import { NextResponse } from 'next/server';
  * Processes asynchronous notifications for Collections and Disbursements.
  */
 export async function POST(req) {
+  return await handleMomoCallback(req);
+}
+
+export async function PUT(req) {
+  return await handleMomoCallback(req);
+}
+
+async function handleMomoCallback(req) {
   try {
     const payload = await req.json();
     console.log('--- MoMo Callback Received ---', payload);
