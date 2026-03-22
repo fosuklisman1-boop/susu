@@ -10,9 +10,20 @@ const MOMO_BASE_URL = 'https://sandbox.momodeveloper.mtn.com'; // Change for pro
 /**
  * Provision an API User and API Key in the Sandbox environment
  * @param {string} subscriptionKey 
+ * @param {string} callbackUrlOrHost - The host or full URL where callbacks will be sent
  */
-export async function provisionSandboxUser(subscriptionKey) {
+export async function provisionSandboxUser(subscriptionKey, callbackUrlOrHost = 'localhost') {
   const userId = uuidv4();
+  
+  // Extract hostname if a URL was provided
+  let callbackHost = callbackUrlOrHost;
+  try {
+    if (callbackUrlOrHost.includes('://')) {
+      callbackHost = new URL(callbackUrlOrHost).hostname;
+    }
+  } catch (e) {
+    callbackHost = callbackUrlOrHost;
+  }
   
   // 1. Create API User
   const userRes = await fetch(`${MOMO_BASE_URL}/v1_0/apiuser`, {
@@ -22,7 +33,7 @@ export async function provisionSandboxUser(subscriptionKey) {
       'Content-Type': 'application/json',
       'Ocp-Apim-Subscription-Key': subscriptionKey
     },
-    body: JSON.stringify({ providerCallbackHost: 'localhost' })
+    body: JSON.stringify({ providerCallbackHost: callbackHost })
   });
 
   if (!userRes.ok) {

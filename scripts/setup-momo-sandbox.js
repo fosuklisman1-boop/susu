@@ -16,13 +16,16 @@ async function setupSandbox() {
   }
 
   try {
-    console.log('\n--- Provisioning Collection API ---');
-    const coll = await provisionSandboxUser(collectionKey);
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const callbackHost = new URL(siteUrl).hostname;
+
+    console.log(`\n--- Provisioning Collection API for host: ${callbackHost} ---`);
+    const coll = await provisionSandboxUser(collectionKey, callbackHost);
     console.log('✅ Collection User ID:', coll.userId);
     console.log('✅ Collection API Key:', coll.apiKey);
 
-    console.log('\n--- Provisioning Disbursement API ---');
-    const disb = await provisionSandboxUser(disbursementKey);
+    console.log(`\n--- Provisioning Disbursement API for host: ${callbackHost} ---`);
+    const disb = await provisionSandboxUser(disbursementKey, callbackHost);
     console.log('✅ Disbursement User ID:', disb.userId);
     console.log('✅ Disbursement API Key:', disb.apiKey);
 
