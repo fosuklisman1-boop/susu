@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Target, ArrowUpRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import UnifiedPaymentModal from '@/components/UnifiedPaymentModal'
 
 export default function PesewaBoxClient({ 
@@ -18,6 +19,7 @@ export default function PesewaBoxClient({
   contributions,
   freqLabel
 }) {
+  const router = useRouter()
   const [paymentState, setPaymentState] = useState({
     isOpen: false,
     amount: 0,
@@ -198,8 +200,9 @@ export default function PesewaBoxClient({
         planId={plan.id}
         metadata={paymentState.metadata}
         onSuccess={() => {
-          // In a real app we'd refresh the page or show a toast
-          console.log('Payment Successful');
+          // Trigger a server-side refresh to show updated balances
+          router.refresh();
+          console.log('Payment Successful - Refreshing data');
         }}
       />
     </div>

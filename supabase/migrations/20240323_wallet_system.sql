@@ -52,8 +52,9 @@ WITH CHECK (true);
 CREATE OR REPLACE FUNCTION update_wallet_on_contribution()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Only act if status changed to 'success'
-    IF (TG_OP = 'INSERT' AND NEW.status = 'success') OR (TG_OP = 'UPDATE' AND OLD.status != 'success' AND NEW.status = 'success') THEN
+    -- Only act if status changed to 'success' (case-insensitive for safety)
+    IF (TG_OP = 'INSERT' AND LOWER(NEW.status) = 'success') OR 
+       (TG_OP = 'UPDATE' AND LOWER(OLD.status) != 'success' AND LOWER(NEW.status) = 'success') THEN
         
         -- Handle PERSONAL Contribution
         IF TG_TABLE_NAME = 'contributions' THEN
