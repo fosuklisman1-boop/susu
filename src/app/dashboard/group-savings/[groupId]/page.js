@@ -54,7 +54,7 @@ export default async function GroupDetailPage({ params }) {
 
   const totalContributed = contributions?.reduce((sum, c) => sum + Number(c.amount), 0) || 0
   
-  // Fetch group withdrawals
+  // Fetch group withdrawals (for history view)
   const { data: grpWd } = await supabase
     .from('withdrawals')
     .select('amount, status, created_at, payout_method')
@@ -62,8 +62,14 @@ export default async function GroupDetailPage({ params }) {
     .in('status', ['pending', 'approved', 'completed', 'rejected'])
     .order('created_at', { ascending: false })
   
-  const totalWithdrawn = grpWd?.reduce((sum, w) => sum + Number(w.amount), 0) || 0
-  const availablePot = Math.max(totalContributed - totalWithdrawn, 0)
+  // Fetch actual Wallet balance
+  const { data: walletData } = await supabase
+    .from('wallets')
+    .select('balance')
+    .eq('group_id', groupId)
+    .single()
+    
+  const availablePot = walletData?.balance || 0
 
   const targetAmount = Number(group.target_amount || 0)
   const progressPct = targetAmount > 0 ? Math.min((totalContributed / targetAmount) * 100, 100) : 0
@@ -124,22 +130,23 @@ export default async function GroupDetailPage({ params }) {
         <div style={{ background: 'white', borderRadius: '16px', padding: '20px', marginBottom: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.03)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Total Contributed</p>
-              <h1 style={{ fontSize: '1.6rem', fontWeight: 'bold' }}>GHS {totalContributed.toFixed(2)}</h1>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Available Wallet Balance</p>
+              <h1 style={{ fontSize: '1.6rem', fontWeight: 'bold', color: '#16a34a' }}>GHS {Number(availablePot).toFixed(2)}</h1>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Members</p>
-              <h2 style={{ fontSize: '1.6rem', fontWeight: 'bold' }}>{members?.length || 0}</h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Total Contributed</p>
+              <h2 style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>GHS {totalContributed.toFixed(2)}</h2>
             </div>
           </div>
           {targetAmount > 0 && (
             <>
-              <div style={{ height: '6px', background: '#e5e7eb', borderRadius: '3px', overflow: 'hidden', marginBottom: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                <span>Group Goal Progress</span>
+                <span>{progressPct.toFixed(1)}% of GHS {targetAmount.toLocaleString()}</span>
+              </div>
+              <div style={{ height: '6px', background: '#e5e7eb', borderRadius: '3px', overflow: 'hidden' }}>
                 <div style={{ width: `${progressPct}%`, background: '#22c55e', height: '100%', borderRadius: '3px' }}></div>
               </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right' }}>
-                {progressPct.toFixed(1)}% of GHS {targetAmount.toLocaleString()} {(group.group_type === 'challenge') ? 'per member' : 'goal'}
-              </p>
             </>
           )}
         </div>
