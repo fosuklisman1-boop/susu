@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { PlusCircle, Target, Users, CheckCircle, ChevronRight, Lock } from 'lucide-react'
 import UnifiedPaymentModal from '@/components/UnifiedPaymentModal'
+import ReferralCard from '@/components/ReferralCard'
 
 export default function DashboardClient({ user, activePlans, planSavings, availableBalance }) {
   const [isTopUpOpen, setIsTopUpOpen] = useState(false)
@@ -93,6 +94,9 @@ export default function DashboardClient({ user, activePlans, planSavings, availa
           </div>
         </Link>
       </div>
+
+      {/* Referral Program Section */}
+      <ReferralCard userId={user.id} />
 
       {/* Active Plans Section */}
       <div>

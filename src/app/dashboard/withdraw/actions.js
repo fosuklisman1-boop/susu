@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { createMomoWithdrawal } from '@/app/momo-actions/momo'
+import { savePaymentMethod } from '@/app/actions/user'
 
 export async function createWithdrawal(prevState, formData) {
   const supabase = await createClient()
@@ -14,9 +15,20 @@ export async function createWithdrawal(prevState, formData) {
   const payoutMethod = formData.get('payout_method')
   const payoutDetails = formData.get('payout_details')
   const groupId = formData.get('groupId') // optional
+  const saveAccount = formData.get('save_account') === 'on' || formData.get('save_account') === 'true'
 
   if (!amount || amount <= 0) return { error: 'Please enter a valid amount' }
   if (!payoutDetails) return { error: 'Please provide payout details' }
+
+  // 1. If saveAccount is true, persist it
+  if (saveAccount) {
+    await savePaymentMethod(
+      payoutMethod.includes('MoMo') ? 'momo_mtn' : 'bank_ghana', 
+      payoutDetails, 
+      user.email, // Use email as account name fallback
+      true // set as default
+    )
+  }
 
   let availableBalance = 0;
 

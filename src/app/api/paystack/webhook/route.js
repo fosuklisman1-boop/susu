@@ -28,8 +28,8 @@ export async function POST(request) {
     // Process successful payment
     if (event.event === 'charge.success') {
       const { reference, amount, metadata, customer } = event.data
-      const planId = metadata?.planId
-      const groupId = metadata?.groupId
+      const planId = metadata?.planId || metadata?.plan_id
+      const groupId = metadata?.groupId || metadata?.group_id
 
       if (planId) {
         const { data: plan } = await supabase.from('susu_plans').select('user_id').eq('id', planId).single()
@@ -41,7 +41,8 @@ export async function POST(request) {
               user_id: plan.user_id,
               amount: (amount / 100).toFixed(2),
               payment_reference: reference,
-              status: 'success'
+              status: 'success',
+              provider: 'paystack'
             })
           }
         }
@@ -57,7 +58,8 @@ export async function POST(request) {
             amount: (amount / 100).toFixed(2),
             payment_reference: reference,
             status: 'success',
-            contributor_name: metadata?.contributor_name || customer.first_name || 'Group Member',
+            provider: 'paystack',
+            contributor_name: metadata?.contributor_name || metadata?.contributorName || customer.first_name || 'Group Member',
             contributor_email: customer.email
           })
         }

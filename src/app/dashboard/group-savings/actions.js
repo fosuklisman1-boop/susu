@@ -235,3 +235,47 @@ export async function updateGroup(prevState, formData) {
 
   return { success: true }
 }
+
+export async function recordGroupPayout(groupId, userId, amount, cycleNumber) {
+  const supabase = await createClient()
+  
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+  
+  // Verify Admin
+  const { data: member } = await supabase
+    .from('group_members')
+    .select('role')
+    .eq('group_id', groupId)
+    .eq('user_id', user.id)
+    .single()
+    
+  if (member?.role !== 'admin') return { error: 'Only admins can record payouts.' }
+  
+  // 1. Insert Payout Record
+  const { error: payoutError } = await supabase
+    .from('payouts')
+    .insert({
+      group_id: groupId,
+      user_id: userId,
+      amount,
+      cycle_number: cycleNumber,
+      status: 'completed'
+    })
+    
+  if (payoutError) return { error: 'Failed to record payout.' }
+  
+  // 2. Increment Cycle in Group
+  const { error: groupError } = await supabase
+    .from('savings_groups')
+    .update({ 
+      current_cycle: (cycleNumber || 1) + 1,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', groupId)
+    
+  if (groupError) return { error: 'Payout recorded but failed to increment cycle.' }
+  
+  revalidatePath(`/dashboard/group-savings/${groupId}`)
+  return { success: true }
+}

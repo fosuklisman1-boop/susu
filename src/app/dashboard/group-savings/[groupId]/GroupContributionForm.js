@@ -7,6 +7,7 @@ import UnifiedPaymentModal from '@/components/UnifiedPaymentModal'
 export default function GroupContributionForm({ 
   groupId, 
   userEmail, 
+  userId,
   isFixed = true, 
   fixedAmount = 0, 
   minAmount = 0 
@@ -71,10 +72,11 @@ export default function GroupContributionForm({
         onClose={() => setIsOpen(false)}
         amount={currentAmount}
         userEmail={userEmail}
+        userId={userId}
         groupId={groupId}
         metadata={{ 
           type: 'group_contribution', 
-          contributorName: userEmail,
+          contributor_name: userEmail,
           memo: `Contribution for Group ${groupId}` 
         }}
       />

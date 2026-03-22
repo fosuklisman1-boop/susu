@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import WithdrawClient from './WithdrawClient'
+import { getUserPaymentMethods } from '@/app/actions/user'
 
 export default async function WithdrawPage({ searchParams }) {
   const { groupId } = await searchParams
@@ -65,6 +66,8 @@ export default async function WithdrawPage({ searchParams }) {
     availableBalance = Math.max(totalIn - totalOut, 0)
   }
 
+  const savedMethods = await getUserPaymentMethods()
+
   return (
     <WithdrawClient 
       availableBalance={availableBalance} 
@@ -72,6 +75,7 @@ export default async function WithdrawPage({ searchParams }) {
       groupId={groupId}
       groupName={groupName}
       isGroup={isGroup}
+      savedMethods={savedMethods}
     />
   )
 }

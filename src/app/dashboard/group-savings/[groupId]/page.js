@@ -5,6 +5,7 @@ import { ArrowLeft, Settings, UserMinus, XCircle, Landmark } from 'lucide-react'
 import PaystackButton from '@/components/PaystackButton'
 import GroupContributionForm from './GroupContributionForm'
 import GroupWithdrawalForm from './GroupWithdrawalForm'
+import PayoutAction from './PayoutAction'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -86,8 +87,18 @@ export default async function GroupDetailPage({ params }) {
     })
   }
 
-  // 2. Payout Schedule for Rotating groups (simplified for now)
-  const payoutOrder = members?.sort((a, b) => (a.payout_order || 99) - (b.payout_order || 99))
+  // 2. Payout Schedule for Rotating groups
+  const { data: payouts } = await supabase
+    .from('payouts')
+    .select('*')
+    .eq('group_id', groupId)
+
+  const currentCycle = group.current_cycle || 1
+  const sortedMembers = members?.sort((a, b) => (a.payout_order || 99) - (b.payout_order || 99))
+  
+  // Find who to pay in current cycle
+  const currentRecipient = sortedMembers?.[currentCycle - 1]
+  const isRecipientPaid = payouts?.some(p => p.cycle_number === currentCycle)
 
   const typeLabels = {
     rotating: 'Rotating Group Savings',
@@ -249,19 +260,43 @@ export default async function GroupDetailPage({ params }) {
           <div style={{ background: 'white', borderRadius: '16px', padding: '20px', marginBottom: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.03)' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '16px' }}>🔄 Payout Cycle</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {payoutOrder?.map((m, i) => {
+              {sortedMembers?.map((m, i) => {
                 const isMe = m.user_id === user.id
+                const cycleNum = i + 1
+                const isPaid = payouts?.some(p => p.cycle_number === cycleNum && p.status === 'completed')
+                const isCurrent = cycleNum === currentCycle
+
                 return (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', opacity: (i + 1) < 1 ? 0.5 : 1 }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: isMe ? '#d32f2f' : '#f3f4f6', color: isMe ? 'white' : '#374151', fontSize: '0.8rem', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {i + 1}
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', opacity: cycleNum < currentCycle ? 0.6 : 1 }}>
+                    <div style={{ 
+                      width: '28px', height: '28px', borderRadius: '50%', 
+                      background: isPaid ? '#16a34a' : (isCurrent ? '#FDBE2C' : '#f3f4f6'), 
+                      color: isPaid || isCurrent ? 'white' : '#374151', 
+                      fontSize: '0.8rem', fontWeight: '700', display: 'flex', 
+                      alignItems: 'center', justifyContent: 'center' 
+                    }}>
+                      {isPaid ? <CheckCircle2 size={16} /> : cycleNum}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: '0.85rem', fontWeight: isMe ? '700' : '600' }}>{isMe ? 'You' : `Member ${i + 1}`}</p>
+                      <p style={{ fontSize: '0.85rem', fontWeight: isMe ? '700' : '600' }}>
+                        {isMe ? 'You' : (m.user_id ? `Member ${i + 1}` : 'Unknown Member')}
+                        {isPaid && <span style={{ marginLeft: '8px', fontSize: '0.65rem', color: '#16a34a', fontWeight: '800' }}>PAID</span>}
+                      </p>
                     </div>
-                    <span style={{ fontSize: '0.75rem', fontWeight: '600', color: (i === 0) ? '#d97706' : '#6b7280' }}>
-                      {i === 0 ? 'CURRENT POT' : `Cycle ${i + 1}`}
-                    </span>
+                    {isCurrent && !isPaid && (
+                      <PayoutAction 
+                        groupId={groupId}
+                        recipientId={m.user_id}
+                        amount={Number(group.contribution_amount) * (members?.length || 1)}
+                        currentCycle={currentCycle}
+                        isAdmin={isAdmin}
+                      />
+                    )}
+                    {!isCurrent && (
+                      <span style={{ fontSize: '0.75rem', fontWeight: '600', color: isPaid ? '#16a34a' : '#6b7280' }}>
+                        {isPaid ? 'COMPLETED' : `Cycle ${cycleNum}`}
+                      </span>
+                    )}
                   </div>
                 )
               })}
@@ -364,6 +399,7 @@ export default async function GroupDetailPage({ params }) {
           key={`${group.id}-${group.contribution_amount}-${group.is_fixed_contribution}-${group.min_contribution_amount}`}
           groupId={group.id}
           userEmail={user.email}
+          userId={user.id}
           isFixed={group.is_fixed_contribution ?? true}
           fixedAmount={group.contribution_amount}
           minAmount={group.min_contribution_amount}

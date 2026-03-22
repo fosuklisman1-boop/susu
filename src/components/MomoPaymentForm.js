@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { createMomoPayment, syncMomoTransaction } from '@/app/momo-actions/momo'
 import { Loader2, Phone, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
+import { getSiteSettings } from '@/app/actions/settings'
 
 export default function MomoPaymentForm({ 
   amount, 
@@ -20,6 +21,15 @@ export default function MomoPaymentForm({
   const [referenceId, setReferenceId] = useState(null)
   const [pollCount, setPollCount] = useState(0)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [settings, setSettings] = useState(null)
+
+  useEffect(() => {
+    async function loadSettings() {
+      const s = await getSiteSettings()
+      if (s) setSettings(s)
+    }
+    loadSettings()
+  }, [])
 
   // Function to manually check status
   const checkStatus = async () => {
@@ -51,7 +61,7 @@ export default function MomoPaymentForm({
           const next = prev + 1;
           if (next > 40) { // Timeout after ~3.5 minutes
             setStatus('failed');
-            setError('Transaction timed out. If you paid, please contact support with reference: ' + referenceId);
+            setError(`Transaction timed out. If you paid, please contact support at ${settings?.support_phone || 'our helpline'} with reference: ${referenceId}`);
             clearInterval(interval);
           }
           return next;

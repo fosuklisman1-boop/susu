@@ -51,13 +51,14 @@ export async function createMomoPayment({ amount, phoneNumber, userId, planId = 
           status: 'pending',
           provider: 'momo',
           provider_reference: referenceId,
-          contributor_name: metadata.contributorName || 'Member',
-          contributor_email: metadata.contributorEmail || null
+          contributor_name: metadata.contributor_name || metadata.contributorName || 'Member',
+          contributor_email: metadata.contributor_email || metadata.contributorEmail || null
         });
         
         if (insertErr) console.error("❌ [MoMo Sync] DB Insert Error for Group Contribution:", insertErr);
+      } else {
         // Handle Standard Plan Contribution
-        await supabase.from('contributions').insert({
+        const { error: insertErr } = await supabase.from('contributions').insert({
           user_id: userId,
           plan_id: planId,
           amount,
@@ -65,6 +66,8 @@ export async function createMomoPayment({ amount, phoneNumber, userId, planId = 
           provider: 'momo',
           reference: referenceId
         });
+
+        if (insertErr) console.error("❌ [MoMo Sync] DB Insert Error for Standard Contribution:", insertErr);
       }
       
       return { success: true, referenceId };
