@@ -48,19 +48,13 @@ export default async function GroupDetailPage({ params }) {
   // Fetch contributions
   const { data: contributions, error: gcError } = await supabase
     .from('group_contributions')
-    .select('id, amount, status, contributor_name, contributor_email, created_at, user_id, group_id')
+    .select('id, amount, status, contributor_name, contributor_email, inserted_at, user_id, group_id')
     .eq('group_id', groupId)
     .eq('status', 'success')
-    .order('created_at', { ascending: false })
+    .order('inserted_at', { ascending: false })
 
   console.log(`[DEBUG] Group=${groupId} | User=${user.id} | GC_Count=${contributions?.length} | Error=${gcError?.message || 'none'}`)
-  if (contributions && contributions.length > 0) {
-    console.log(`[DEBUG] Sample GC:`, contributions[0])
-  } else if (!gcError && contributions) {
-     const { data: anyGC } = await supabase.from('group_contributions').select('id, status').eq('group_id', groupId).limit(5)
-     console.log(`[DEBUG] Any GC (status check) for this group:`, anyGC)
-  }
-
+  
   const totalContributed = contributions?.reduce((sum, c) => sum + Number(c.amount), 0) || 0
   
   // Fetch group withdrawals (for history view)
@@ -253,7 +247,7 @@ export default async function GroupDetailPage({ params }) {
                       {isAdmin && (
                         <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{c.contributor_email || 'No email provided'}</p>
                       )}
-                      <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(c.created_at).toLocaleDateString('en-GB')}</p>
+                      <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(c.inserted_at).toLocaleDateString('en-GB')}</p>
                     </div>
                     <p style={{ fontSize: '0.9rem', fontWeight: '700', color: '#16a34a' }}>+GHS {Number(c.amount).toFixed(2)}</p>
                   </div>
