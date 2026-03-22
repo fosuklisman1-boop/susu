@@ -125,29 +125,47 @@ FOR EACH ROW EXECUTE FUNCTION update_wallet_on_withdrawal();
 CREATE OR REPLACE FUNCTION sync_wallets_initial()
 RETURNS void AS $$
 BEGIN
-    -- Clear and rebuild is safest for a one-time backfill
-    DELETE FROM wallets;
-
-    -- Standard Contributions
+    -- 1. Insert 0.00 balance wallets for ALL existing users
     INSERT INTO wallets (user_id, balance)
-    SELECT user_id, SUM(amount)
-    FROM contributions
-    WHERE status = 'success'
-    GROUP BY user_id
-    ON CONFLICT (user_id) DO UPDATE SET balance = EXCLUDED.balance;
+    SELECT id, 0.00
+    FROM auth.users
+    ON CONFLICT (user_id) DO NOTHING;
 
-    -- Group Contributions
+    -- 2. Insert 0.00 balance wallets for ALL existing groups
     INSERT INTO wallets (group_id, balance)
-    SELECT group_id, SUM(amount)
-    FROM group_contributions
-    WHERE status = 'success'
-    GROUP BY group_id
-    ON CONFLICT (group_id) DO UPDATE SET balance = EXCLUDED.balance;
+    SELECT id, 0.00
+    FROM savings_groups
+    ON CONFLICT (group_id) DO NOTHING;
 
-    -- Subtract Withdrawals
+    -- 3. Calculate and apply balances from Standard Contributions
+    UPDATE wallets w
+    SET balance = w.balance + sub.total_in,
+        updated_at = NOW()
+    FROM (
+        SELECT user_id, SUM(amount) as total_in
+        FROM contributions
+        WHERE status = 'success'
+        GROUP BY user_id
+    ) sub
+    WHERE w.user_id = sub.user_id;
+
+    -- 4. Calculate and apply balances from Group Contributions
+    UPDATE wallets w
+    SET balance = w.balance + sub.total_in,
+        updated_at = NOW()
+    FROM (
+        SELECT group_id, SUM(amount) as total_in
+        FROM group_contributions
+        WHERE status = 'success'
+        GROUP BY group_id
+    ) sub
+    WHERE w.group_id = sub.group_id;
+
+    -- 5. Subtract Withdrawals
     -- For users
     UPDATE wallets w
-    SET balance = w.balance - sub.total_out
+    SET balance = w.balance - sub.total_out,
+        updated_at = NOW()
     FROM (
         SELECT user_id, SUM(amount) as total_out
         FROM withdrawals
@@ -158,7 +176,8 @@ BEGIN
 
     -- For groups
     UPDATE wallets w
-    SET balance = w.balance - sub.total_out
+    SET balance = w.balance - sub.total_out,
+        updated_at = NOW()
     FROM (
         SELECT group_id, SUM(amount) as total_out
         FROM withdrawals
