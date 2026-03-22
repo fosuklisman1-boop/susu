@@ -85,19 +85,19 @@ BEGIN
         
         -- Handle PERSONAL Contribution
         IF TG_TABLE_NAME = 'contributions' THEN
-            -- 1. Update Personal Wallet
-            INSERT INTO wallets (user_id, balance)
-            VALUES (NEW.user_id, NEW.amount)
-            ON CONFLICT (user_id) DO UPDATE
-            SET balance = wallets.balance + EXCLUDED.balance,
-                updated_at = NOW();
-
-            -- 2. Update Plan Balance
+            -- 1. Update Plan Balance if it belongs to a goal
             IF NEW.plan_id IS NOT NULL THEN
                 UPDATE susu_plans 
                 SET current_balance = current_balance + NEW.amount,
                     updated_at = NOW()
                 WHERE id = NEW.plan_id;
+            ELSE
+                -- 2. Update Personal Wallet only if it's a direct top-up
+                INSERT INTO wallets (user_id, balance)
+                VALUES (NEW.user_id, NEW.amount)
+                ON CONFLICT (user_id) DO UPDATE
+                SET balance = wallets.balance + EXCLUDED.balance,
+                    updated_at = NOW();
             END IF;
 
             -- 3. Create Ledger Entry
@@ -194,7 +194,7 @@ BEGIN
     FROM contributions WHERE LOWER(status) = 'success' ON CONFLICT DO NOTHING;
 
     UPDATE wallets w SET balance = w.balance + sub.total_in, updated_at = NOW()
-    FROM (SELECT user_id, SUM(amount) as total_in FROM contributions WHERE LOWER(status) = 'success' GROUP BY user_id) sub WHERE w.user_id = sub.user_id;
+    FROM (SELECT user_id, SUM(amount) as total_in FROM contributions WHERE LOWER(status) = 'success' AND plan_id IS NULL GROUP BY user_id) sub WHERE w.user_id = sub.user_id;
 
     UPDATE susu_plans p SET current_balance = sub.total_in, updated_at = NOW()
     FROM (SELECT plan_id, SUM(amount) as total_in FROM contributions WHERE LOWER(status) = 'success' AND plan_id IS NOT NULL GROUP BY plan_id) sub WHERE p.id = sub.plan_id;
