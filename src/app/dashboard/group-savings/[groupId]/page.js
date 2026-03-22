@@ -249,7 +249,10 @@ export default async function GroupDetailPage({ params }) {
             {contributions?.length === 0 ? (
               <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '20px 0' }}>No contributions yet. Start the ball rolling!</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '500px', overflowY: 'auto', paddingRight: '8px' }}>
+              <div 
+                className="custom-scrollbar"
+                style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '500px', overflowY: 'auto', paddingRight: '12px' }}
+              >
                 {contributions?.map((c, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: i < (contributions.length - 1) ? '1px solid #f3f4f6' : 'none', paddingBottom: '8px' }}>
                     <div>
