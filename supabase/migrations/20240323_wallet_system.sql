@@ -150,11 +150,12 @@ BEGIN
     ON CONFLICT (group_id) DO NOTHING;
 
     -- Backfill Personal Contributions
+    -- We sum all where status is 'success' (LOWER-cased for safety)
     UPDATE wallets w
     SET balance = w.balance + sub.total_in, updated_at = NOW()
     FROM (
         SELECT user_id, SUM(amount) as total_in
-        FROM contributions WHERE status = 'success' GROUP BY user_id
+        FROM contributions WHERE LOWER(status) = 'success' GROUP BY user_id
     ) sub WHERE w.user_id = sub.user_id;
 
     -- Backfill Plan Balances
@@ -162,7 +163,7 @@ BEGIN
     SET current_balance = sub.total_in, updated_at = NOW()
     FROM (
         SELECT plan_id, SUM(amount) as total_in
-        FROM contributions WHERE status = 'success' AND plan_id IS NOT NULL GROUP BY plan_id
+        FROM contributions WHERE LOWER(status) = 'success' AND plan_id IS NOT NULL GROUP BY plan_id
     ) sub WHERE p.id = sub.plan_id;
 
     -- Backfill Group Contributions
@@ -170,7 +171,7 @@ BEGIN
     SET balance = w.balance + sub.total_in, updated_at = NOW()
     FROM (
         SELECT group_id, SUM(amount) as total_in
-        FROM group_contributions WHERE status = 'success' GROUP BY group_id
+        FROM group_contributions WHERE LOWER(status) = 'success' GROUP BY group_id
     ) sub WHERE w.group_id = sub.group_id;
 
     -- Subtract Withdrawals (Personal)

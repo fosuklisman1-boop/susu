@@ -18,14 +18,8 @@ export default async function PesewasBoxPlanPage({ params }) {
 
   if (error || !plan) redirect('/dashboard')
 
-  const { data: contributions } = await supabase
-    .from('contributions')
-    .select('amount, created_at')
-    .eq('plan_id', planId)
-    .eq('status', 'success')
-    .order('created_at', { ascending: false })
-
-  const totalSaved = contributions?.reduce((sum, c) => sum + Number(c.amount), 0) || 0
+  // Use persistent current_balance for accurate and fast tracking
+  const totalSaved = Number(plan.current_balance || 0)
   const progressPercentage = Math.min((totalSaved / Number(plan.target_amount)) * 100, 100)
   const periodicAmount = Number(plan.daily_contribution)
   const remaining = Math.max(0, Number(plan.target_amount) - totalSaved)
@@ -58,6 +52,14 @@ export default async function PesewasBoxPlanPage({ params }) {
   const overdueAmount = Math.max(0, totalExpected - totalSaved)
   const visibleSlots = [...slots.filter(s => s.status === 'Overdue'), ...slots.filter(s => s.status === 'Pending').slice(0, 5)]
 
+  // Still fetch contributions for the history list
+  const { data: historyContributions } = await supabase
+    .from('contributions')
+    .select('amount, created_at')
+    .eq('plan_id', planId)
+    .eq('status', 'success')
+    .order('created_at', { ascending: false })
+
   return (
     <PesewaBoxClient 
       user={user}
@@ -69,7 +71,7 @@ export default async function PesewasBoxPlanPage({ params }) {
       overdueAmount={overdueAmount}
       remaining={remaining}
       visibleSlots={visibleSlots}
-      contributions={contributions}
+      contributions={historyContributions}
       freqLabel={freqLabel}
     />
   )
