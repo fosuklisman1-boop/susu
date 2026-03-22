@@ -160,6 +160,60 @@ export default async function GroupDetailPage({ params }) {
 
       <div style={{ padding: '16px' }}>
 
+        {/* ── SAVER PAYOUT INFO (For Rotating Members) ────────────────────── */}
+        {group.group_type === 'rotating' && myMembership && (
+          <div style={{ 
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', 
+            borderRadius: '20px', 
+            padding: '24px', 
+            color: 'white', 
+            marginBottom: '16px',
+            boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.3)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            {/* Background Accent */}
+            <div style={{ position: 'absolute', top: '-10px', right: '-10px', width: '80px', height: '80px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }}></div>
+            
+            <h3 style={{ fontSize: '0.85rem', fontWeight: '700', letterSpacing: '1px', opacity: 0.7, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Trophy size={16} color="#fbbf24" /> YOUR PAYOUT SUMMARY
+            </h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+              <div>
+                <p style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '4px' }}>Expected Payout</p>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#fbbf24' }}>
+                  GHS {(Number(group.max_members || members.length) * Number(group.contribution_amount)).toLocaleString()}
+                </h2>
+              </div>
+              <div>
+                <p style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '4px' }}>Your Position</p>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: '800' }}>Cycle {myMembership.payout_order || 'N/A'}</h2>
+              </div>
+              <div>
+                <p style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '4px' }}>Estimated Date</p>
+                <p style={{ fontSize: '1rem', fontWeight: '700' }}>
+                  {(() => {
+                    if (!group.start_date || !myMembership.payout_order) return 'Not set yet'
+                    const d = new Date(group.start_date)
+                    const offset = (myMembership.payout_order - 1)
+                    if (group.frequency === 'weekly') d.setDate(d.getDate() + offset * 7)
+                    else if (group.frequency === 'biweekly') d.setDate(d.getDate() + offset * 14)
+                    else if (group.frequency === 'monthly') d.setMonth(d.getMonth() + offset)
+                    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                  })()}
+                </p>
+              </div>
+              <div>
+                <p style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '4px' }}>Cycle Goal</p>
+                <p style={{ fontSize: '1rem', fontWeight: '700' }}>
+                  {group.max_members || members.length} Member(s)
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stats Banner */}
         <div style={{ background: 'white', borderRadius: '16px', padding: '20px', marginBottom: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.03)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>

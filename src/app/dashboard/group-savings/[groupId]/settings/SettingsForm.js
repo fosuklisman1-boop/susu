@@ -15,6 +15,7 @@ export default function SettingsForm({ group }) {
   const [contributionAmount, setContributionAmount] = useState(group.contribution_amount || '')
   const [minContribution, setMinContribution] = useState(group.min_contribution_amount || '')
   const [frequency, setFrequency] = useState(group.frequency || 'monthly')
+  const [maxMembers, setMaxMembers] = useState(group.max_members || '')
 
   const isSuccess = state?.success
 
@@ -164,6 +165,25 @@ export default function SettingsForm({ group }) {
               <option value="monthly">Monthly</option>
             </select>
           </div>
+
+          {group.group_type === 'rotating' && (
+            <div style={{ marginTop: '20px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: '#6b7280', marginBottom: '8px' }}>MAXIMUM MEMBERS (TOTAL PEOPLE)</label>
+              <input 
+                type="number" 
+                name="max_members" 
+                value={maxMembers} 
+                onChange={(e) => setMaxMembers(e.target.value)}
+                placeholder="e.g. 10"
+                required
+                style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e5e7eb', fontSize: '1rem', outline: 'none' }}
+              />
+              <p style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '8px' }}>
+                <Info size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                Rotating groups require a fixed member count to calculate payouts.
+              </p>
+            </div>
+          )}
         </div>
 
         <button 

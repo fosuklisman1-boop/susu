@@ -116,7 +116,7 @@ export async function joinGroup(prevState, formData) {
 
   const { data: group, error: findError } = await supabase
     .from('savings_groups')
-    .select('id, name')
+    .select('id, name, group_type')
     .eq('invite_code', inviteCode)
     .single()
 
@@ -139,10 +139,21 @@ export async function joinGroup(prevState, formData) {
     }
   }
 
+  // For rotating groups, assign the next payout order
+  let nextOrder = null
+  if (group.group_type === 'rotating') {
+    const { count } = await supabase
+      .from('group_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('group_id', group.id)
+    nextOrder = (count || 0) + 1
+  }
+
   const { error: joinError } = await supabase.from('group_members').insert({
     group_id: group.id,
     user_id: user.id,
-    role: 'member'
+    role: 'member',
+    payout_order: nextOrder
   })
 
   if (joinError) {

@@ -156,12 +156,20 @@ export default function CreateGroupPage() {
               <div>
                 <label style={labelStyle}>Member Get Paid</label>
                 <select name="frequency" value={fields.frequency} onChange={handle}
-                  style={{...inputStyle, WebkitAppearance: 'none', appearance: 'none'}}>
+                  style={{...inputStyle, WebkitAppearance: 'none', appearance: 'none'}} required>
                   <option value="" disabled>Choose a payout Duration</option>
                   <option value="weekly">Every Week</option>
                   <option value="biweekly">Every 2 Weeks</option>
                   <option value="monthly">Every Month</option>
                 </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Maximum Members (Total People)</label>
+                <input type="number" name="max_members" placeholder="e.g. 10"
+                  value={fields.max_members} onChange={handle} style={inputStyle} required />
+                <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '6px' }}>
+                  The payout amount will be (Members × Contribution).
+                </p>
               </div>
               <div>
                 <input type="date" name="startDate" value={fields.startDate || ''} onChange={handle}
