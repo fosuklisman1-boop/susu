@@ -33,7 +33,6 @@ const TYPE_CONFIG = {
   },
 }
 
-import { useToast } from '@/components/ToastProvider'
 
 export default function GroupSavingsClient({ groups }) {
   const { showToast } = useToast()
