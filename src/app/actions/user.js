@@ -11,15 +11,21 @@ export async function getUserProfile() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
   
-  const { data, error } = await supabase
-    .from('users')
+  let { data, error } = await supabase
+    .from('profiles')
     .select('*')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
     
-  if (error) {
-    console.error('Error fetching user profile:', error)
-    return null
+  if (!data && !error) {
+    // Auto-repair: Create a profile if missing for an existing user
+    console.log(`[DEBUG] No profile found for ${user.id}. Creating basic profile...`)
+    const { data: newProfile } = await supabase.from('profiles').insert({
+      id: user.id,
+      full_name: user.user_metadata?.full_name || user.email.split('@')[0],
+      phone_number: user.user_metadata?.phone_number || ''
+    }).select().single()
+    data = newProfile
   }
   
   return data

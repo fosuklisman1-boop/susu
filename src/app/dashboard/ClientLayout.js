@@ -155,10 +155,10 @@ export default function ClientLayout({ children }) {
             <History size={22} />
             <span>History</span>
           </Link>
-          <div className="nav-item">
+          <Link href="/dashboard/profile" className="nav-item">
             <User size={22} />
             <span>Profile</span>
-          </div>
+          </Link>
         </nav>
 
       </div>

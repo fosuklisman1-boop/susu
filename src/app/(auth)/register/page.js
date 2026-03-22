@@ -14,8 +14,14 @@ export default async function RegisterPage({ searchParams }) {
       )}
 
       <form action={signup} style={{ display: 'flex', flexDirection: 'column' }}>
+        <label className="input-label" htmlFor="full_name">Full Name</label>
+        <input className="input-field" id="full_name" name="full_name" type="text" required placeholder="John Doe" style={{ marginBottom: '12px' }} />
+
+        <label className="input-label" htmlFor="phone_number">Phone Number</label>
+        <input className="input-field" id="phone_number" name="phone_number" type="tel" required placeholder="024 XXX XXXX" style={{ marginBottom: '12px' }} />
+
         <label className="input-label" htmlFor="email">Email</label>
-        <input className="input-field" id="email" name="email" type="email" required placeholder="you@example.com" />
+        <input className="input-field" id="email" name="email" type="email" required placeholder="you@example.com" style={{ marginBottom: '12px' }} />
 
         <label className="input-label" htmlFor="password">Password</label>
         <input className="input-field" id="password" name="password" type="password" required placeholder="••••••••" />

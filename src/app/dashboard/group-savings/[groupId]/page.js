@@ -28,7 +28,7 @@ export default async function GroupDetailPage({ params }) {
   // Fetch members with their roles
   const { data: members } = await supabase
     .from('group_members')
-    .select('user_id, role, created_at, payout_order')
+    .select('user_id, role, created_at, payout_order, profiles(full_name)')
     .eq('group_id', groupId)
 
   // Determine current user's role
@@ -418,7 +418,7 @@ export default async function GroupDetailPage({ params }) {
                       </div>
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: '0.85rem', fontWeight: isMe ? '700' : '600', marginBottom: '2px' }}>
-                          {isMe ? 'You' : (m?.user_id ? `Member ${i + 1}` : <span style={{ color: '#9ca3af', fontWeight: '400' }}>Waiting for member...</span>)}
+                          {isMe ? 'You' : (m?.user_id ? (m.profiles?.full_name || `Member ${i + 1}`) : <span style={{ color: '#9ca3af', fontWeight: '400' }}>Waiting for member...</span>)}
                           {isPaid && <span style={{ marginLeft: '8px', fontSize: '0.65rem', color: '#16a34a', fontWeight: '800' }}>PAID</span>}
                         </p>
                         <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
@@ -487,7 +487,7 @@ export default async function GroupDetailPage({ params }) {
                           {m.role === 'admin' ? 'A' : 'M'}
                         </div>
                         <div>
-                          <p style={{ fontSize: '0.85rem', fontWeight: '600' }}>{m.user_id === user.id ? 'You' : `Member ${i + 1}`}</p>
+                          <p style={{ fontSize: '0.85rem', fontWeight: '600' }}>{m.user_id === user.id ? 'You' : (m.profiles?.full_name || `Member ${i + 1}`)}</p>
                           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                             Joined {m.created_at ? new Date(m.created_at).toLocaleDateString('en-GB') : 'N/A'}
                           </p>
@@ -551,7 +551,7 @@ export default async function GroupDetailPage({ params }) {
                       <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: m.role === 'admin' ? '#b71c1c' : '#1f2937', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.85rem' }}>
                         {m.role === 'admin' ? 'A' : 'M'}
                       </div>
-                      <p style={{ fontSize: '0.85rem', fontWeight: '600' }}>{m.user_id === user.id ? 'You' : `Member ${i + 1}`}</p>
+                      <p style={{ fontSize: '0.85rem', fontWeight: '600' }}>{m.user_id === user.id ? 'You' : (m.profiles?.full_name || `Member ${i + 1}`)}</p>
                     </div>
                     <span style={{ background: m.role === 'admin' ? '#fef2f2' : '#f0fdf4', color: m.role === 'admin' ? '#b91c1c' : '#16a34a', fontSize: '0.75rem', fontWeight: '600', padding: '4px 10px', borderRadius: '20px' }}>
                       {m.role}

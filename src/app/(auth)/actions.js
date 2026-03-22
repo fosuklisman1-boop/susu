@@ -25,15 +25,25 @@ export async function login(formData) {
 export async function signup(formData) {
   const supabase = await createClient()
 
-  const data = {
-    email: formData.get('email'),
-    password: formData.get('password'),
-  }
+  const email = formData.get('email')
+  const password = formData.get('password')
+  const fullName = formData.get('full_name')
+  const phoneNumber = formData.get('phone_number')
 
-  const { error } = await supabase.auth.signUp(data)
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: fullName,
+        phone_number: phoneNumber,
+      }
+    }
+  })
 
   if (error) {
-    redirect('/register?error=Could not authenticate user')
+    console.error('Signup error:', error)
+    redirect(`/register?error=${encodeURIComponent(error.message)}`)
   }
 
   revalidatePath('/', 'layout')
