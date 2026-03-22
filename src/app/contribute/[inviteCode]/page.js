@@ -9,7 +9,7 @@ export default async function PublicContributePage({ params }) {
   // Fetch group by invite code — public, no auth required
   const { data: group, error } = await supabase
     .from('savings_groups')
-    .select('id, name, group_type, target_amount, invite_code')
+    .select('id, name, group_type, target_amount, invite_code, is_fixed_contribution, contribution_amount, min_contribution_amount')
     .eq('invite_code', inviteCode.toUpperCase())
     .in('group_type', ['contribution', 'challenge']) // Support public links for both types
     .single()
