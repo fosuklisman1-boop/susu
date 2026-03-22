@@ -8,7 +8,8 @@ import { getMomoToken, requestToPay, initiateTransfer, getTransactionStatus } fr
  * Initiates a MoMo Collection (RequestToPay)
  */
 export async function createMomoPayment({ amount, phoneNumber, userId, planId = null, groupId = null, metadata = {} }) {
-  const supabase = await createClient();
+  // Use Service Role Client to bypass RLS for inserting financial records
+  const supabase = await createServiceRoleClient();
   
   // 1. Get Credentials (from .env.local)
   const subscriptionKey = process.env.MOMO_COLLECTION_SUBSCRIPTION_KEY;
@@ -79,7 +80,8 @@ export async function createMomoPayment({ amount, phoneNumber, userId, planId = 
  * Initiates a MoMo Disbursement (Withdrawal)
  */
 export async function createMomoWithdrawal({ amount, phoneNumber, withdrawalId }) {
-  const supabase = await createClient();
+  // Use Service Role Client to bypass RLS
+  const supabase = await createServiceRoleClient();
   
   const subscriptionKey = process.env.MOMO_DISBURSEMENT_SUBSCRIPTION_KEY;
   const apiUser = process.env.MOMO_DISBURSEMENT_USER_ID;
@@ -131,7 +133,7 @@ export async function createMomoWithdrawal({ amount, phoneNumber, withdrawalId }
  * Polls for transaction status and syncs with DB
  */
 export async function syncMomoTransaction(type, referenceId) {
-  // Use Service Role to bypass RLS for status synchronization
+  // Use Service Role to bypass RLS for status synchronization and trigger execution
   const supabase = await createServiceRoleClient();
   
   const product = type === 'collection' ? 'COLLECTION' : 'DISBURSEMENT';
@@ -158,7 +160,8 @@ export async function syncMomoTransaction(type, referenceId) {
          .eq('reference', referenceId)
          .select('id');
        
-       if (contrib?.length) console.log(`✅ [MoMo Sync] Updated standard contribution ${contrib[0].id}`);
+       if (contribErr) console.error(`❌ [MoMo Sync] DB Update failed for standard contribution:`, contribErr);
+       else if (contrib?.length) console.log(`✅ [MoMo Sync] Updated standard contribution ${contrib[0].id}`);
        
        // Check group contributions
        const { data: gContrib, error: gContribErr } = await supabase.from('group_contributions')
@@ -166,9 +169,10 @@ export async function syncMomoTransaction(type, referenceId) {
          .eq('provider_reference', referenceId)
          .select('id');
 
-       if (gContrib?.length) console.log(`✅ [MoMo Sync] Updated group contribution ${gContrib[0].id}`);
+       if (gContribErr) console.error(`❌ [MoMo Sync] DB Update failed for group contribution:`, gContribErr);
+       else if (gContrib?.length) console.log(`✅ [MoMo Sync] Updated group contribution ${gContrib[0].id}`);
        
-       if (!contrib?.length && !gContrib?.length) {
+       if (!contrib?.length && !gContrib?.length && !contribErr && !gContribErr) {
          console.warn(`⚠️ [MoMo Sync] No matching contribution found for reference: ${referenceId}`);
        }
     } else {
@@ -178,7 +182,8 @@ export async function syncMomoTransaction(type, referenceId) {
          .eq('reference', referenceId)
          .select('id');
        
-       if (wd?.length) console.log(`✅ [MoMo Sync] Updated withdrawal ${wd[0].id}`);
+       if (wdErr) console.error(`❌ [MoMo Sync] DB Update failed for withdrawal:`, wdErr);
+       else if (wd?.length) console.log(`✅ [MoMo Sync] Updated withdrawal ${wd[0].id}`);
        else console.warn(`⚠️ [MoMo Sync] No matching withdrawal found for reference: ${referenceId}`);
     }
 
