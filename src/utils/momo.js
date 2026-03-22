@@ -47,15 +47,17 @@ export async function provisionSandboxUser(subscriptionKey) {
 }
 
 /**
- * Gets a fresh access token for a specific product scope (collection, disbursement, etc.)
+ * Gets a fresh access token for a specific product scope
+ * @param {string} productType - 'collection', 'disbursement', etc.
  * @param {string} subscriptionKey - Product-specific subscription key
  * @param {string} apiUser - Provisioned API User UUID
  * @param {string} apiKey - Generated API Key
  */
-export async function getMomoToken(subscriptionKey, apiUser, apiKey) {
+export async function getMomoToken(productType, subscriptionKey, apiUser, apiKey) {
   const auth = Buffer.from(`${apiUser}:${apiKey}`).toString('base64');
   
-  const response = await fetch(`${MOMO_BASE_URL}/token/`, {
+  // Endpoint is product-specific: /collection/token/, /disbursement/token/, etc.
+  const response = await fetch(`${MOMO_BASE_URL}/${productType}/token/`, {
     method: 'POST',
     headers: {
       'Authorization': `Basic ${auth}`,

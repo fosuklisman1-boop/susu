@@ -21,7 +21,7 @@ export async function createMomoPayment({ amount, phoneNumber, userId }) {
 
   try {
     // 2. Get Token
-    const token = await getMomoToken(subscriptionKey, apiUser, apiKey);
+    const token = await getMomoToken('collection', subscriptionKey, apiUser, apiKey);
     const referenceId = uuidv4();
 
     // 3. Request Payment
@@ -72,7 +72,7 @@ export async function createMomoWithdrawal({ amount, phoneNumber, withdrawalId }
   }
 
   try {
-    const token = await getMomoToken(subscriptionKey, apiUser, apiKey);
+    const token = await getMomoToken('disbursement', subscriptionKey, apiUser, apiKey);
     const referenceId = uuidv4();
 
     const success = await initiateTransfer({
@@ -118,7 +118,7 @@ export async function syncMomoTransaction(type, referenceId) {
   const apiUser = process.env[`MOMO_${product}_USER_ID`];
   const apiKey = process.env[`MOMO_${product}_API_KEY`];
 
-  const token = await getMomoToken(subscriptionKey, apiUser, apiKey);
+  const token = await getMomoToken(type, subscriptionKey, apiUser, apiKey);
   const status = await getTransactionStatus(type, referenceId, subscriptionKey, token);
 
   if (!status) return null;
