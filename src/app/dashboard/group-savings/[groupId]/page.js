@@ -117,7 +117,15 @@ export default async function GroupDetailPage({ params }) {
     .eq('group_id', groupId)
 
   const currentCycle = group.current_cycle || 1
-  const sortedMembers = members?.sort((a, b) => (a.payout_order || 99) - (b.payout_order || 99))
+  const sortedMembers = members?.sort((a, b) => {
+    const orderA = a.payout_order || 999
+    const orderB = b.payout_order || 999
+    if (orderA !== orderB) return orderA - orderB
+    return new Date(a.created_at) - new Date(b.created_at)
+  })
+
+  // Find my position for the summary card
+  const myPosition = myMembership?.payout_order || (sortedMembers?.findIndex(m => m.user_id === user.id) + 1)
   
   // Find who to pay in current cycle
   const currentRecipient = sortedMembers?.[currentCycle - 1]
@@ -188,15 +196,15 @@ export default async function GroupDetailPage({ params }) {
               </div>
               <div>
                 <p style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '4px' }}>Your Position</p>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: '800' }}>Cycle {myMembership.payout_order || 'N/A'}</h2>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: '800' }}>Cycle {myPosition || 'N/A'}</h2>
               </div>
               <div>
                 <p style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '4px' }}>Estimated Date</p>
                 <p style={{ fontSize: '1rem', fontWeight: '700' }}>
                   {(() => {
-                    if (!group.start_date || !myMembership.payout_order) return 'Not set yet'
+                    if (!group.start_date || !myPosition) return 'Not set yet'
                     const d = new Date(group.start_date)
-                    const offset = (myMembership.payout_order - 1)
+                    const offset = (myPosition - 1)
                     if (group.frequency === 'weekly') d.setDate(d.getDate() + offset * 7)
                     else if (group.frequency === 'biweekly') d.setDate(d.getDate() + offset * 14)
                     else if (group.frequency === 'monthly') d.setMonth(d.getMonth() + offset)

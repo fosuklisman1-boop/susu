@@ -94,7 +94,8 @@ export async function createGroup(prevState, formData) {
   const { error: memberError } = await supabase.from('group_members').insert({
     group_id: newGroup.id,
     user_id: user.id,
-    role: 'admin'
+    role: 'admin',
+    payout_order: groupType === 'rotating' ? 1 : null
   })
 
   if (memberError) {
