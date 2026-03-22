@@ -73,7 +73,6 @@ export async function createGroup(prevState, formData) {
       target_amount: targetAmount,
       contribution_amount: contributionAmount,
       frequency,
-      max_members: maxMembers ? Number(maxMembers) : null,
       payout_method: payoutMethod,
       start_date: startDate,
       end_date: endDate,
@@ -207,7 +206,7 @@ export async function updateGroup(prevState, formData) {
   // Verify Admin or Creator
   const { data: group, error: fetchError } = await supabase
     .from('savings_groups')
-    .select('created_by')
+    .select('created_by, group_type')
     .eq('id', groupId)
     .single()
 
