@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { createServiceRoleClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 /**
@@ -19,33 +19,37 @@ async function handleMomoCallback(req) {
     console.log('--- MoMo Callback Received ---', payload);
 
     const { 
-      referenceId, 
-      externalId, 
+      referenceId,  // Sometimes provided in custom implementations
+      externalId,   // Standard MoMo "externalId" sent in body
       status, 
       reason,
       financialTransactionId 
     } = payload;
 
-    if (!referenceId) {
-      return NextResponse.json({ error: 'Missing referenceId' }, { status: 400 });
+    // Use externalId as fallback; MoMo usually sends the reference as externalId
+    const lookupRef = referenceId || externalId;
+
+    if (!lookupRef) {
+      console.error('❌ Callback failed: No referenceId or externalId found in payload');
+      return NextResponse.json({ error: 'Missing identifier' }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    // IMPORTANT: use Service Role for webhooks to bypass RLS!
+    const supabase = await createServiceRoleClient();
 
     // 1. Determine if this was a Collection or Disbursement
-    // We check BOTH tables for this referenceId
     
     // Check Contributions (Collections)
     const { data: contribution } = await supabase
       .from('contributions')
       .select('id')
-      .eq('reference', referenceId)
-      .single();
+      .eq('reference', lookupRef)
+      .maybeSingle();
 
     if (contribution) {
       const dbStatus = status === 'SUCCESSFUL' ? 'success' : (status === 'FAILED' ? 'failed' : 'pending');
       
-      await supabase
+      const { error: updateErr } = await supabase
         .from('contributions')
         .update({ 
           status: dbStatus,
@@ -53,7 +57,9 @@ async function handleMomoCallback(req) {
         })
         .eq('id', contribution.id);
         
-      console.log(`Updated Contribution ${contribution.id} to ${dbStatus}`);
+      if (updateErr) console.error('Error updating contribution:', updateErr);
+      else console.log(`✅ Updated Contribution ${contribution.id} to ${dbStatus}`);
+      
       return NextResponse.json({ success: true });
     }
 
@@ -61,13 +67,13 @@ async function handleMomoCallback(req) {
     const { data: groupContrib } = await supabase
       .from('group_contributions')
       .select('id')
-      .eq('provider_reference', referenceId)
-      .single();
+      .eq('provider_reference', lookupRef)
+      .maybeSingle();
 
     if (groupContrib) {
       const dbStatus = status === 'SUCCESSFUL' ? 'success' : (status === 'FAILED' ? 'failed' : 'pending');
       
-      await supabase
+      const { error: updateErr } = await supabase
         .from('group_contributions')
         .update({ 
           status: dbStatus,
@@ -75,7 +81,9 @@ async function handleMomoCallback(req) {
         })
         .eq('id', groupContrib.id);
         
-      console.log(`Updated Group Contribution ${groupContrib.id} to ${dbStatus}`);
+      if (updateErr) console.error('Error updating group contribution:', updateErr);
+      else console.log(`✅ Updated Group Contribution ${groupContrib.id} to ${dbStatus}`);
+      
       return NextResponse.json({ success: true });
     }
 
@@ -83,13 +91,13 @@ async function handleMomoCallback(req) {
     const { data: withdrawal } = await supabase
       .from('withdrawals')
       .select('id')
-      .eq('reference', referenceId) // We must store reference in withdrawals too
-      .single();
+      .eq('reference', lookupRef)
+      .maybeSingle();
 
     if (withdrawal) {
       const dbStatus = status === 'SUCCESSFUL' ? 'completed' : (status === 'FAILED' ? 'rejected' : 'pending');
       
-      await supabase
+      const { error: updateErr } = await supabase
         .from('withdrawals')
         .update({ 
           status: dbStatus,
@@ -97,14 +105,17 @@ async function handleMomoCallback(req) {
         })
         .eq('id', withdrawal.id);
 
-      console.log(`Updated Withdrawal ${withdrawal.id} to ${dbStatus}`);
+      if (updateErr) console.error('Error updating withdrawal:', updateErr);
+      else console.log(`✅ Updated Withdrawal ${withdrawal.id} to ${dbStatus}`);
+      
       return NextResponse.json({ success: true });
     }
 
+    console.warn(`⚠️ Callback received for unknown reference: ${lookupRef}`);
     return NextResponse.json({ error: 'Reference not found in database' }, { status: 404 });
 
   } catch (error) {
-    console.error('MoMo Callback Error:', error);
+    console.error('CRITICAL Callback Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
