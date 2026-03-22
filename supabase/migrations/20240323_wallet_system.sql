@@ -36,8 +36,22 @@ CREATE TABLE IF NOT EXISTS transactions (
 -- 3. Add current_balance to susu_plans
 ALTER TABLE public.susu_plans ADD COLUMN IF NOT EXISTS current_balance DECIMAL(12, 2) DEFAULT 0.00;
 
--- 4. Ensure group_id exists on withdrawals
+-- 4. Ensure all MoMo-related and Ledger-related columns exist on base tables
+-- For Standard Contributions
+ALTER TABLE public.contributions ADD COLUMN IF NOT EXISTS reference TEXT UNIQUE;
+ALTER TABLE public.contributions ADD COLUMN IF NOT EXISTS provider TEXT DEFAULT 'paystack';
+ALTER TABLE public.contributions ADD COLUMN IF NOT EXISTS notes TEXT;
+
+-- For Group Contributions
+ALTER TABLE public.group_contributions ADD COLUMN IF NOT EXISTS provider_reference TEXT UNIQUE;
+ALTER TABLE public.group_contributions ADD COLUMN IF NOT EXISTS provider TEXT DEFAULT 'paystack';
+ALTER TABLE public.group_contributions ADD COLUMN IF NOT EXISTS notes TEXT;
+
+-- For Withdrawals
 ALTER TABLE public.withdrawals ADD COLUMN IF NOT EXISTS group_id UUID REFERENCES public.savings_groups(id) ON DELETE CASCADE;
+ALTER TABLE public.withdrawals ADD COLUMN IF NOT EXISTS reference TEXT UNIQUE;
+ALTER TABLE public.withdrawals ADD COLUMN IF NOT EXISTS provider TEXT DEFAULT 'momo';
+ALTER TABLE public.withdrawals ADD COLUMN IF NOT EXISTS notes TEXT;
 
 -- 5. Enable RLS
 ALTER TABLE wallets ENABLE ROW LEVEL SECURITY;
@@ -176,7 +190,7 @@ BEGIN
 
     -- Backfill Personal Contributions -> Wallets & Ledger
     INSERT INTO transactions (user_id, type, amount, status, reference, source_table, source_id, created_at)
-    SELECT user_id, 'plan_deposit', amount, 'success', COALESCE(reference, payment_reference), 'contributions', id, created_at
+    SELECT user_id, 'plan_deposit', amount, 'success', COALESCE(reference, payment_reference), 'contributions', id, COALESCE(paid_at, NOW())
     FROM contributions WHERE LOWER(status) = 'success' ON CONFLICT DO NOTHING;
 
     UPDATE wallets w SET balance = w.balance + sub.total_in, updated_at = NOW()
@@ -187,7 +201,7 @@ BEGIN
 
     -- Backfill Group Contributions -> Wallets & Ledger
     INSERT INTO transactions (user_id, group_id, type, amount, status, reference, source_table, source_id, created_at)
-    SELECT user_id, group_id, 'group_deposit', amount, 'success', COALESCE(provider_reference, payment_reference), 'group_contributions', id, created_at
+    SELECT user_id, group_id, 'group_deposit', amount, 'success', COALESCE(provider_reference, payment_reference), 'group_contributions', id, COALESCE(paid_at, NOW())
     FROM group_contributions WHERE LOWER(status) = 'success' ON CONFLICT DO NOTHING;
 
     UPDATE wallets w SET balance = w.balance + sub.total_in, updated_at = NOW()
