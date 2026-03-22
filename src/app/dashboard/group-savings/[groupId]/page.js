@@ -48,7 +48,7 @@ export default async function GroupDetailPage({ params }) {
   // Fetch successful contributions for history and totals
   const { data: contributions, error: gcError } = await supabase
     .from('group_contributions')
-    .select('id, amount, status, contributor_name, contributor_email, created_at, user_id, group_id')
+    .select('id, amount, status, contributor_name, contributor_email, created_at, user_id, group_id, profiles(full_name)')
     .eq('group_id', groupId)
     .eq('status', 'success')
     .order('created_at', { ascending: false })
@@ -60,7 +60,7 @@ export default async function GroupDetailPage({ params }) {
   // Fetch group withdrawals (for history view)
   const { data: grpWd } = await supabase
     .from('withdrawals')
-    .select('amount, status, created_at, payout_method')
+    .select('amount, status, created_at, payout_method, user_id, profiles(full_name)')
     .eq('group_id', groupId)
     .in('status', ['pending', 'approved', 'completed', 'rejected'])
     .order('created_at', { ascending: false })
@@ -342,7 +342,9 @@ export default async function GroupDetailPage({ params }) {
               {grpWd.map((w, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: i < grpWd.length - 1 ? '1px solid #f3f4f6' : 'none', paddingBottom: '8px' }}>
                   <div>
-                    <p style={{ fontSize: '0.85rem', fontWeight: '600' }}>Withdrawal ({w.payout_method})</p>
+                    <p style={{ fontSize: '0.85rem', fontWeight: '600' }}>
+                      {w.profiles?.full_name ? `${w.profiles.full_name}'s Withdrawal` : `Withdrawal (${w.payout_method})`}
+                    </p>
                     <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(w.created_at).toLocaleDateString('en-GB')}</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
@@ -371,8 +373,8 @@ export default async function GroupDetailPage({ params }) {
                 {contributions?.map((c, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: i < (contributions.length - 1) ? '1px solid #f3f4f6' : 'none', paddingBottom: '8px' }}>
                     <div>
-                      <p style={{ fontSize: '0.85rem', fontWeight: '600' }}>{c.contributor_name || 'Anonymous'}</p>
-                      {isAdmin && (
+                      <p style={{ fontSize: '0.85rem', fontWeight: '600' }}>{c.profiles?.full_name || c.contributor_name || 'Anonymous'}</p>
+                      {isAdmin && !c.profiles?.full_name && (
                         <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{c.contributor_email || 'No email provided'}</p>
                       )}
                       <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>
