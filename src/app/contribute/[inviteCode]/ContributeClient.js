@@ -12,6 +12,8 @@ export default function ContributeClient({ group, totalRaised, targetAmount, pro
   const [copied, setCopied] = useState(false)
   const [isAnonymous, setIsAnonymous] = useState(false)
 
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
   const shareUrl = typeof window !== 'undefined' ? window.location.href : ''
 
   const copyLink = () => {
@@ -20,42 +22,12 @@ export default function ContributeClient({ group, totalRaised, targetAmount, pro
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handlePay = async (e) => {
+  const handleOpenModal = (e) => {
     e.preventDefault()
     if (!amount || Number(amount) <= 0) return setError('Please enter a valid amount.')
     if (!email) return setError('Email is required for payment processing.')
     setError(null)
-    setLoading(true)
-
-    try {
-      const res = await fetch('/api/paystack/initialize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          amount: Number(amount) * 100, // Paystack uses pesewas
-          groupId: group.id,
-          contributorName: isAnonymous ? 'Anonymous' : (name.trim() || 'Anonymous'),
-          contributorEmail: email,
-          isAnonymous: true,
-          metadata: {
-            group_id: group.id,
-            contributor_name: name || 'Anonymous',
-            type: 'group_contribution'
-          }
-        })
-      })
-      const data = await res.json()
-      if (data.authorization_url) {
-        window.location.href = data.authorization_url
-      } else {
-        setError(data.error || 'Payment initialization failed.')
-      }
-    } catch {
-      setError('Network error. Please try again.')
-    } finally {
-      setLoading(false)
-    }
+    setIsModalOpen(true)
   }
 
   const quickAmounts = [10, 20, 50, 100, 200, 500]
@@ -116,7 +88,7 @@ export default function ContributeClient({ group, totalRaised, targetAmount, pro
             </div>
           )}
 
-          <form onSubmit={handlePay} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <form onSubmit={handleOpenModal} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                 <label style={{ display: 'block', fontWeight: '600', fontSize: '0.85rem' }}>Your Name</label>
@@ -160,9 +132,9 @@ export default function ContributeClient({ group, totalRaised, targetAmount, pro
                 style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '10px', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} />
             </div>
 
-            <button type="submit" disabled={loading}
-              style={{ width: '100%', background: loading ? '#9ca3af' : '#d32f2f', color: 'white', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '1rem', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer' }}>
-              {loading ? 'Redirecting to payment...' : `CONTRIBUTE${amount ? ` GHS ${amount}` : ''}`}
+            <button type="submit"
+              style={{ width: '100%', background: '#d32f2f', color: 'white', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '1rem', fontWeight: '700', cursor: 'pointer' }}>
+              {`CONTRIBUTE${amount ? ` GHS ${amount}` : ''}`}
             </button>
           </form>
         </div>
@@ -182,10 +154,24 @@ export default function ContributeClient({ group, totalRaised, targetAmount, pro
 
         {/* Powered by footer */}
         <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af', marginTop: '8px' }}>
-          🔒 Secured by Paystack &bull; Powered by StashupSusu
+          🔒 Secured by Paystack & MoMo &bull; Powered by StashupSusu
         </p>
 
       </div>
+
+      <UnifiedPaymentModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        amount={Number(amount)}
+        userEmail={email}
+        groupId={group.id}
+        metadata={{ 
+          type: 'public_contribution',
+          contributorName: isAnonymous ? 'Anonymous' : (name.trim() || 'Anonymous'),
+          isAnonymous,
+          memo: `Public contribution to ${group.name}`
+        }}
+      />
     </div>
   )
 }

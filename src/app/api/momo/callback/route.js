@@ -49,6 +49,28 @@ export async function POST(req) {
       return NextResponse.json({ success: true });
     }
 
+    // Check Group Contributions
+    const { data: groupContrib } = await supabase
+      .from('group_contributions')
+      .select('id')
+      .eq('provider_reference', referenceId)
+      .single();
+
+    if (groupContrib) {
+      const dbStatus = status === 'SUCCESSFUL' ? 'success' : (status === 'FAILED' ? 'failed' : 'pending');
+      
+      await supabase
+        .from('group_contributions')
+        .update({ 
+          status: dbStatus,
+          notes: reason || `MoMo ID: ${financialTransactionId || 'N/A'}`
+        })
+        .eq('id', groupContrib.id);
+        
+      console.log(`Updated Group Contribution ${groupContrib.id} to ${dbStatus}`);
+      return NextResponse.json({ success: true });
+    }
+
     // Check Withdrawals (Disbursements)
     const { data: withdrawal } = await supabase
       .from('withdrawals')

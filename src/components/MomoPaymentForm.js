@@ -5,7 +5,15 @@ import { v4 as uuidv4 } from 'uuid'
 import { createMomoPayment, syncMomoTransaction } from '@/app/momo-actions/momo'
 import { Loader2, Phone, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
 
-export default function MomoPaymentForm({ amount, userId, onSuccess, onCancel }) {
+export default function MomoPaymentForm({ 
+  amount, 
+  userId, 
+  planId = null, 
+  groupId = null, 
+  metadata = {}, 
+  onSuccess, 
+  onCancel 
+}) {
   const [phoneNumber, setPhoneNumber] = useState('')
   const [status, setStatus] = useState('idle') // idle, provisioning, pending, success, failed
   const [error, setError] = useState(null)
@@ -53,7 +61,10 @@ export default function MomoPaymentForm({ amount, userId, onSuccess, onCancel })
     const result = await createMomoPayment({ 
       amount, 
       phoneNumber, 
-      userId 
+      userId,
+      planId,
+      groupId,
+      metadata
     });
 
     if (result.success) {

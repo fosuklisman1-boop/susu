@@ -7,7 +7,7 @@ import { getMomoToken, requestToPay, initiateTransfer, getTransactionStatus } fr
 /**
  * Initiates a MoMo Collection (RequestToPay)
  */
-export async function createMomoPayment({ amount, phoneNumber, userId }) {
+export async function createMomoPayment({ amount, phoneNumber, userId, planId = null, groupId = null, metadata = {} }) {
   const supabase = await createClient();
   
   // 1. Get Credentials (from .env.local)
@@ -31,7 +31,7 @@ export async function createMomoPayment({ amount, phoneNumber, userId }) {
       currency: 'EUR', // Sandbox default
       externalId: referenceId,
       payerNumber: phoneNumber,
-      payerMessage: 'Susu Contribution',
+      payerMessage: metadata.memo || 'Susu Contribution',
       payeeNote: 'Stashup Savings',
       subscriptionKey,
       token,
@@ -41,13 +41,29 @@ export async function createMomoPayment({ amount, phoneNumber, userId }) {
 
     if (success) {
       // 4. Log to DB (pending status)
-      await supabase.from('contributions').insert({
-        user_id: userId,
-        amount,
-        status: 'pending',
-        provider: 'momo',
-        reference: referenceId
-      });
+      if (groupId) {
+        // Handle Group Contribution
+        await supabase.from('group_contributions').insert({
+          user_id: userId,
+          group_id: groupId,
+          amount,
+          status: 'pending',
+          provider: 'momo',
+          provider_reference: referenceId,
+          contributor_name: metadata.contributorName || 'Member',
+          is_anonymous: metadata.isAnonymous || false
+        });
+      } else {
+        // Handle Standard Plan Contribution
+        await supabase.from('contributions').insert({
+          user_id: userId,
+          plan_id: planId,
+          amount,
+          status: 'pending',
+          provider: 'momo',
+          reference: referenceId
+        });
+      }
       
       return { success: true, referenceId };
     }
