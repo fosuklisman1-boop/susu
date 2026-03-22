@@ -287,7 +287,7 @@ export default async function GroupDetailPage({ params }) {
                 return (
                   <div key={i}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.85rem' }}>
-                      <span style={{ fontWeight: isMe ? '700' : '500' }}>{isMe ? 'You' : `Member ${i + 1}`}</span>
+                      <span style={{ fontWeight: isMe ? '700' : '500' }}>{isMe ? 'You' : (m.profiles?.full_name || `Member ${i + 1}`)}</span>
                       <span style={{ color: 'var(--text-muted)' }}>GHS {memberTotal.toFixed(2)} / {memberGoal.toLocaleString()}</span>
                     </div>
                     <div style={{ height: '8px', background: '#f3f4f6', borderRadius: '4px', overflow: 'hidden' }}>
