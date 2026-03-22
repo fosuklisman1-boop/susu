@@ -28,7 +28,7 @@ export default async function GroupDetailPage({ params }) {
   // Fetch members with their roles
   const { data: members } = await supabase
     .from('group_members')
-    .select('user_id, role, created_at')
+    .select('user_id, role, created_at, payout_order')
     .eq('group_id', groupId)
 
   // Determine current user's role
