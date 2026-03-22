@@ -79,6 +79,7 @@ export async function createGroup(prevState, formData) {
       end_date: endDate,
       is_fixed_contribution: isFixed,
       min_contribution_amount: minAmount,
+      max_members: groupType === 'rotating' ? (maxMembers ? Number(maxMembers) : null) : null,
       invite_code: inviteCode,
       created_by: user.id
     })
@@ -124,8 +125,8 @@ export async function joinGroup(prevState, formData) {
     return { error: `No group found with code "${inviteCode}". Please check and try again.` }
   }
 
-  // 1. Check if group is full
-  if (group.max_members) {
+  // 1. Check if group is full (ONLY for rotating groups)
+  if (group.group_type === 'rotating' && group.max_members) {
     const { count } = await supabase
       .from('group_members')
       .select('*', { count: 'exact', head: true })
@@ -238,6 +239,7 @@ export async function updateGroup(prevState, formData) {
     payout_method: payoutMethod,
     is_fixed_contribution: isFixed,
     min_contribution_amount: (minAmount !== '' && minAmount !== null) ? Number(minAmount) : 0,
+    max_members: group.group_type === 'rotating' ? (maxMembers !== '' && maxMembers !== null ? Number(maxMembers) : null) : null,
     updated_at: new Date().toISOString()
   }
 

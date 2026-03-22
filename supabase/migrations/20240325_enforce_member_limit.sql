@@ -6,13 +6,19 @@ RETURNS TRIGGER AS $$
 DECLARE
     v_max_members INTEGER;
     v_current_members INTEGER;
+    v_group_type TEXT;
 BEGIN
-    -- Get the max members for the group
-    SELECT max_members INTO v_max_members 
+    -- Get group info
+    SELECT max_members, group_type INTO v_max_members, v_group_type
     FROM savings_groups 
     WHERE id = NEW.group_id;
     
-    -- If no limit, allow
+    -- Only enforce for rotating groups
+    IF v_group_type != 'rotating' THEN
+        RETURN NEW;
+    END IF;
+
+    -- If no limit set for rotating group (shouldn't happen with app logic but for safety), allow
     IF v_max_members IS NULL OR v_max_members = 0 THEN
         RETURN NEW;
     END IF;
