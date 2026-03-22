@@ -117,7 +117,17 @@ export async function requestToPay({
     })
   });
 
-  return response.ok; // 202 Accepted
+  if (!response.ok) {
+    const errBody = await response.text();
+    console.error('MTN RequestToPay Failed:', {
+      status: response.status,
+      body: errBody,
+      callbackUrl
+    });
+    return false;
+  }
+
+  return true; // 202 Accepted
 }
 
 /**
@@ -163,7 +173,17 @@ export async function initiateTransfer({
     })
   });
 
-  return response.ok;
+  if (!response.ok) {
+    const errBody = await response.text();
+    console.error('MTN Transfer Failed:', {
+      status: response.status,
+      body: errBody,
+      callbackUrl
+    });
+    return false;
+  }
+
+  return true;
 }
 
 /**
