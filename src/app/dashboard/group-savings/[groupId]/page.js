@@ -230,6 +230,40 @@ export default async function GroupDetailPage({ params }) {
           </div>
         )}
 
+        {/* ── TOP CONTRIBUTORS (For Shared Pot and Challenges) ────────────────── */}
+        {(group.group_type === 'contribution' || group.group_type === 'challenge') && sortedContributors.length > 0 && (
+          <div style={{ background: 'white', borderRadius: '16px', padding: '20px', marginBottom: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.03)' }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: '700', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Users size={18} />
+              Contributors ({sortedContributors.length})
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {sortedContributors.map((c, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ 
+                      width: '32px', height: '32px', borderRadius: '8px', 
+                      background: i === 0 ? '#fbbf24' : '#f3f4f6', 
+                      color: i === 0 ? '#92400e' : '#6b7280',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '0.8rem', fontWeight: '800'
+                    }}>
+                      {i + 1}
+                    </div>
+                    <div>
+                      <p style={{ fontSize: '0.85rem', fontWeight: '700' }}>
+                        {c.userId === user.id ? 'You' : c.name}
+                      </p>
+                      <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{c.count} contribution{c.count !== 1 ? 's' : ''}</p>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '0.9rem', fontWeight: '800', color: '#111827' }}>GHS {c.total.toFixed(2)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ── WITHDRAWAL HISTORY (Admins or Shared Pot Members) ────────────────── */}
         {(isAdmin || group.group_type === 'contribution') && grpWd?.length > 0 && (
           <div style={{ background: 'white', borderRadius: '16px', padding: '20px', marginBottom: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.03)' }}>
@@ -406,23 +440,29 @@ export default async function GroupDetailPage({ params }) {
               <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem' }}>Share this with friends to invite them</p>
             </div>
 
-            {/* Member List (shared for members too) */}
-            <h1 style={{ fontSize: '1.05rem', fontWeight: '700', marginBottom: '12px' }}>👥 Members</h1>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
-              {members?.map((m, i) => (
-                <div key={i} style={{ background: 'white', borderRadius: '14px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: m.role === 'admin' ? '#b71c1c' : '#1f2937', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.85rem' }}>
-                      {m.role === 'admin' ? 'A' : 'M'}
+            {/* Member List (Hidden for Contribution groups) */}
+            {group.group_type !== 'contribution' && (
+              <>
+                <h1 style={{ fontSize: '1.05rem', fontWeight: '700', marginBottom: '12px' }}>👥 Members</h1>
+              </>
+            )}
+            {group.group_type !== 'contribution' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+                {members?.map((m, i) => (
+                  <div key={i} style={{ background: 'white', borderRadius: '14px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: m.role === 'admin' ? '#b71c1c' : '#1f2937', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.85rem' }}>
+                        {m.role === 'admin' ? 'A' : 'M'}
+                      </div>
+                      <p style={{ fontSize: '0.85rem', fontWeight: '600' }}>{m.user_id === user.id ? 'You' : `Member ${i + 1}`}</p>
                     </div>
-                    <p style={{ fontSize: '0.85rem', fontWeight: '600' }}>{m.user_id === user.id ? 'You' : `Member ${i + 1}`}</p>
+                    <span style={{ background: m.role === 'admin' ? '#fef2f2' : '#f0fdf4', color: m.role === 'admin' ? '#b91c1c' : '#16a34a', fontSize: '0.75rem', fontWeight: '600', padding: '4px 10px', borderRadius: '20px' }}>
+                      {m.role}
+                    </span>
                   </div>
-                  <span style={{ background: m.role === 'admin' ? '#fef2f2' : '#f0fdf4', color: m.role === 'admin' ? '#b91c1c' : '#16a34a', fontSize: '0.75rem', fontWeight: '600', padding: '4px 10px', borderRadius: '20px' }}>
-                    {m.role}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </>
         )}
 
