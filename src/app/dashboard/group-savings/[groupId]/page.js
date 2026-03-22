@@ -230,8 +230,8 @@ export default async function GroupDetailPage({ params }) {
           </div>
         )}
 
-        {/* ── CONTRIBUTION HISTORY ────────────────────────────────── */}
-        {group.group_type === 'contribution' && (
+        {/* ── CONTRIBUTION HISTORY (Show for all types) ────────────────────────── */}
+        {true && (
           <div style={{ background: 'white', borderRadius: '16px', padding: '20px', marginBottom: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.03)' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '16px' }}>Recent Contributions</h3>
             {contributions?.length === 0 ? (
