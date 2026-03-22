@@ -89,15 +89,26 @@ export default async function GroupDetailPage({ params }) {
 
   // ── TYPE-SPECIFIC LOGIC ─────────────────────────────────────────
   
-  // 1. Leaderboard for Challenge groups
-  const memberTotals = {}
-  if (group.group_type === 'challenge') {
-    contributions?.forEach(c => {
-      if (c.user_id) {
-        memberTotals[c.user_id] = (memberTotals[c.user_id] || 0) + Number(c.amount)
+  // Aggregate stats per contributor (Handles registered and anonymous)
+  const contributorStats = {}
+  contributions?.forEach(c => {
+    // Generate a stable key for each contributor
+    const key = c.user_id || c.contributor_email || c.contributor_name || 'Anonymous'
+    if (!contributorStats[key]) {
+      contributorStats[key] = {
+        name: c.contributor_name || 'Anonymous',
+        email: c.contributor_email || '',
+        userId: c.user_id,
+        total: 0,
+        count: 0
       }
-    })
-  }
+    }
+    contributorStats[key].total += Number(c.amount)
+    contributorStats[key].count += 1
+  })
+
+  // Sort by highest contribution first
+  const sortedContributors = Object.values(contributorStats).sort((a, b) => b.total - a.total)
 
   // 2. Payout Schedule for Rotating groups
   const { data: payouts } = await supabase
@@ -199,7 +210,7 @@ export default async function GroupDetailPage({ params }) {
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {members?.map((m, i) => {
-                const memberTotal = memberTotals[m.user_id] || 0
+                const memberTotal = contributorStats[m.user_id]?.total || 0
                 const memberGoal = Number(group.target_amount || 0)
                 const memberPct = memberGoal > 0 ? Math.min((memberTotal / memberGoal) * 100, 100) : 0
                 const isMe = m.user_id === user.id
