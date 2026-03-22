@@ -149,21 +149,37 @@ export async function syncMomoTransaction(type, referenceId) {
     const collectionStatus = status.status === 'SUCCESSFUL' ? 'success' : (status.status === 'FAILED' ? 'failed' : 'pending');
     const withdrawalStatus = status.status === 'SUCCESSFUL' ? 'completed' : (status.status === 'FAILED' ? 'rejected' : 'pending');
 
-    // Update DB based on status
     if (type === 'collection') {
+       console.log(`🔍 [MoMo Sync] Checking contribution for reference: ${referenceId}`);
+       
        // Check standard contributions
-       await supabase.from('contributions')
+       const { data: contrib, error: contribErr } = await supabase.from('contributions')
          .update({ status: collectionStatus, notes: status.reason || null })
-         .eq('reference', referenceId);
+         .eq('reference', referenceId)
+         .select('id');
+       
+       if (contrib?.length) console.log(`✅ [MoMo Sync] Updated standard contribution ${contrib[0].id}`);
        
        // Check group contributions
-       await supabase.from('group_contributions')
+       const { data: gContrib, error: gContribErr } = await supabase.from('group_contributions')
          .update({ status: collectionStatus, notes: status.reason || null })
-         .eq('provider_reference', referenceId);
+         .eq('provider_reference', referenceId)
+         .select('id');
+
+       if (gContrib?.length) console.log(`✅ [MoMo Sync] Updated group contribution ${gContrib[0].id}`);
+       
+       if (!contrib?.length && !gContrib?.length) {
+         console.warn(`⚠️ [MoMo Sync] No matching contribution found for reference: ${referenceId}`);
+       }
     } else {
-       await supabase.from('withdrawals')
+       console.log(`🔍 [MoMo Sync] Checking withdrawal for reference: ${referenceId}`);
+       const { data: wd, error: wdErr } = await supabase.from('withdrawals')
          .update({ status: withdrawalStatus, notes: status.reason || null })
-         .eq('reference', referenceId);
+         .eq('reference', referenceId)
+         .select('id');
+       
+       if (wd?.length) console.log(`✅ [MoMo Sync] Updated withdrawal ${wd[0].id}`);
+       else console.warn(`⚠️ [MoMo Sync] No matching withdrawal found for reference: ${referenceId}`);
     }
 
     return status;
