@@ -203,10 +203,25 @@ export default function CreateGroupPage() {
                   </div>
                 )}
               </div>
-              <div>
-                <label style={labelStyle}>Total Amount Expected (Goal)</label>
-                <input type="number" name="target_amount" placeholder="1000"
-                  value={fields.target_amount} onChange={handle} style={inputStyle} required />
+              <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <label style={labelStyle}>Set a target goal for this group?</label>
+                  <input 
+                    type="checkbox" 
+                    checked={fields.target_amount !== '0' && fields.target_amount !== ''} 
+                    onChange={e => setFields(prev => ({ ...prev, target_amount: e.target.checked ? '1000' : '0' }))}
+                    style={{ width: '20px', height: '20px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                  />
+                </div>
+                
+                {(fields.target_amount !== '0' && fields.target_amount !== '') && (
+                  <div>
+                    <label style={labelStyle}>Total Amount Expected (Goal)</label>
+                    <input type="number" name="target_amount" placeholder="1000"
+                      value={fields.target_amount} onChange={handle} style={inputStyle} required />
+                  </div>
+                )}
+                <input type="hidden" name="target_amount" value={fields.target_amount || '0'} />
               </div>
               <div>
                 <input type="date" name="startDate" value={fields.startDate || ''} onChange={handle}

@@ -58,9 +58,9 @@ export async function createGroup(prevState, formData) {
     return { error: 'Please enter the amount required per member.' }
   }
 
-  // Non-rotating groups need a target amount
-  if (['contribution', 'challenge'].includes(groupType) && !targetAmount) {
-    return { error: 'Please enter the expected goal amount.' }
+  // Challenge groups still need a target amount usually, but we relax it for contribution groups
+  if (groupType === 'challenge' && !targetAmount) {
+    return { error: 'Please enter the expected goal amount per member.' }
   }
 
   const inviteCode = generateInviteCode()
