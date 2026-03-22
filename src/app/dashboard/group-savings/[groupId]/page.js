@@ -48,10 +48,10 @@ export default async function GroupDetailPage({ params }) {
   // Fetch contributions
   const { data: contributions, error: gcError } = await supabase
     .from('group_contributions')
-    .select('id, amount, status, contributor_name, contributor_email, inserted_at, user_id, group_id')
+    .select('id, amount, status, contributor_name, contributor_email, created_at, user_id, group_id')
     .eq('group_id', groupId)
     .eq('status', 'success')
-    .order('inserted_at', { ascending: false })
+    .order('created_at', { ascending: false })
 
   console.log(`[DEBUG] GroupID=${groupId} | UserID=${user.id} | GC_Count=${contributions?.length} | Error=${gcError?.message || 'none'}`)
   
@@ -257,7 +257,9 @@ export default async function GroupDetailPage({ params }) {
                       {isAdmin && (
                         <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{c.contributor_email || 'No email provided'}</p>
                       )}
-                      <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(c.inserted_at).toLocaleDateString('en-GB')}</p>
+                      <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                        {new Date(c.created_at).toLocaleDateString()}
+                      </span>
                     </div>
                     <p style={{ fontSize: '0.9rem', fontWeight: '700', color: '#16a34a' }}>+GHS {Number(c.amount).toFixed(2)}</p>
                   </div>
