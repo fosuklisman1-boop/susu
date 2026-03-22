@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Users, Network, Globe, Send, Plus, X, ChevronRight } from 'lucide-react'
 import { joinGroup } from './actions'
+import { useToast } from '@/components/ToastProvider'
 
 const TYPE_CONFIG = {
   rotating: {
@@ -32,7 +33,10 @@ const TYPE_CONFIG = {
   },
 }
 
+import { useToast } from '@/components/ToastProvider'
+
 export default function GroupSavingsClient({ groups }) {
+  const { showToast } = useToast()
   const [activeType, setActiveType] = useState(null)
   const listRef = useRef(null)
   const router = useRouter()
@@ -40,9 +44,16 @@ export default function GroupSavingsClient({ groups }) {
 
   useEffect(() => {
     if (joinState?.success) {
+      if (joinState.alreadyMember) {
+        showToast(`You are already a member of ${joinState.groupName}`, 'warning')
+      } else {
+        showToast(`Successfully joined ${joinState.groupName}!`, 'success')
+      }
       router.push(`/dashboard/group-savings/${joinState.groupId}`)
+    } else if (joinState?.error) {
+      showToast(joinState.error, 'error')
     }
-  }, [joinState])
+  }, [joinState, router, showToast])
 
   const filteredGroups = activeType
     ? groups.filter(g => g.group_type === activeType)

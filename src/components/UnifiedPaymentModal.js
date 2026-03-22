@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { X, CreditCard, Wallet, ArrowUpRight } from 'lucide-react'
 import PaystackButton from './PaystackButton'
 import MomoPaymentForm from './MomoPaymentForm'
+import { recordPendingContribution } from '@/app/dashboard/group-savings/actions'
+import { v4 as uuidv4 } from 'uuid'
 
 /**
  * Unified Payment Modal
@@ -21,10 +23,30 @@ export default function UnifiedPaymentModal({
   onSuccess
 }) {
   const [paymentMethod, setPaymentMethod] = useState(null) // 'paystack' or 'momo'
+  const [isInitiating, setIsInitiating] = useState(false)
+  const [paystackReference, setPaystackReference] = useState(null)
 
   if (!isOpen) return null
 
   const currentAmount = Number(amount || 0)
+
+  const handlePaystackSelect = async () => {
+    setIsInitiating(true)
+    const newRef = `STASH_${uuidv4().substring(0, 8).toUpperCase()}_${Date.now()}`
+    setPaystackReference(newRef)
+
+    // Record pending in DB immediately
+    await recordPendingContribution({
+      amount: currentAmount,
+      reference: newRef,
+      planId,
+      groupId,
+      metadata: { ...metadata, provider: 'paystack' }
+    })
+
+    setPaymentMethod('paystack')
+    setIsInitiating(false)
+  }
 
   return (
     <div style={{
@@ -65,24 +87,27 @@ export default function UnifiedPaymentModal({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <button 
-                onClick={() => setPaymentMethod('paystack')}
+                onClick={handlePaystackSelect}
+                disabled={isInitiating}
                 style={{ 
                   width: '100%', padding: '16px', borderRadius: '16px', border: '2px solid #f3f4f6', 
-                  background: 'white', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer',
-                  transition: 'border-color 0.2s'
+                  background: 'white', display: 'flex', alignItems: 'center', gap: '14px', cursor: isInitiating ? 'not-allowed' : 'pointer',
+                  transition: 'border-color 0.2s',
+                  opacity: isInitiating ? 0.7 : 1
                 }}
               >
                 <div style={{ background: '#09a5db', color: 'white', padding: '10px', borderRadius: '10px' }}>
                   <CreditCard size={20} />
                 </div>
                 <div style={{ textAlign: 'left' }}>
-                  <p style={{ fontWeight: '700', fontSize: '0.95rem' }}>Card / Bank / MoMo</p>
+                  <p style={{ fontWeight: '700', fontSize: '0.95rem' }}>{isInitiating ? 'Preparing...' : 'Card / Bank / MoMo'}</p>
                   <p style={{ fontSize: '0.7rem', color: '#6b7280' }}>Via Paystack Secure Gateway</p>
                 </div>
               </button>
 
               <button 
                 onClick={() => setPaymentMethod('momo')}
+                disabled={isInitiating}
                 style={{ 
                   width: '100%', padding: '16px', borderRadius: '16px', border: '2px solid #f3f4f6', 
                   background: 'white', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer'
@@ -109,7 +134,8 @@ export default function UnifiedPaymentModal({
              <PaystackButton 
                amount={currentAmount}
                email={userEmail}
-               metadata={{ ...metadata, planId, groupId }}
+               reference={paystackReference}
+               metadata={{ ...metadata, planId, groupId, reference: paystackReference }}
                onSuccess={() => { if (onSuccess) onSuccess(); onClose(); }}
                buttonText={`PAY GHS ${currentAmount.toFixed(2)} NOW`}
                style={{ width: '100%', background: '#09a5db', color: 'white', border: 'none', borderRadius: '16px', padding: '18px', fontSize: '1rem', fontWeight: '800', cursor: 'pointer' }}

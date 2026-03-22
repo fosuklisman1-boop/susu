@@ -1,3 +1,4 @@
+import { ToastProvider } from '@/components/ToastProvider';
 import './globals.css';
 
 export const metadata = {
@@ -12,9 +13,11 @@ export default function RootLayout({ children }) {
         <script src="https://js.paystack.co/v1/inline.js" async></script>
       </head>
       <body>
-        <main className="container">
-          {children}
-        </main>
+        <ToastProvider>
+          <main className="container">
+            {children}
+          </main>
+        </ToastProvider>
       </body>
     </html>
   );

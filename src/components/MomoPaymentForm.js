@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { createMomoPayment, syncMomoTransaction } from '@/app/momo-actions/momo'
 import { Loader2, Phone, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
 import { getSiteSettings } from '@/app/actions/settings'
+import { useToast } from '@/components/ToastProvider'
 
 export default function MomoPaymentForm({ 
   amount, 
@@ -15,6 +16,7 @@ export default function MomoPaymentForm({
   onSuccess, 
   onCancel 
 }) {
+  const { showToast } = useToast()
   const [phoneNumber, setPhoneNumber] = useState('')
   const [status, setStatus] = useState('idle') // idle, provisioning, pending, success, failed
   const [error, setError] = useState(null)
@@ -40,13 +42,19 @@ export default function MomoPaymentForm({
       console.log('Sync Result:', result);
       if (result && result.status === 'SUCCESSFUL') {
         setStatus('success');
+        showToast('Payment verified successfully!', 'success');
         if (onSuccess) setTimeout(onSuccess, 3000);
       } else if (result && result.status === 'FAILED') {
         setStatus('failed');
-        setError(result.reason || 'Transaction failed');
+        const errMsg = result.reason || 'Transaction failed';
+        setError(errMsg);
+        showToast(errMsg, 'error');
+      } else {
+        showToast('Payment still pending. Please wait a moment.', 'warning');
       }
     } catch (err) {
       console.error('Manual sync error:', err);
+      showToast('Error syncing transaction. Please try again.', 'error');
     } finally {
       setIsSyncing(false);
     }
@@ -61,7 +69,9 @@ export default function MomoPaymentForm({
           const next = prev + 1;
           if (next > 40) { // Timeout after ~3.5 minutes
             setStatus('failed');
-            setError(`Transaction timed out. If you paid, please contact support at ${settings?.support_phone || 'our helpline'} with reference: ${referenceId}`);
+            const timeoutMsg = `Transaction timed out. If you paid, please contact support at ${settings?.support_phone || 'our helpline'} with reference: ${referenceId}`;
+            setError(timeoutMsg);
+            showToast('Transaction timed out', 'error');
             clearInterval(interval);
           }
           return next;
@@ -71,11 +81,14 @@ export default function MomoPaymentForm({
           const result = await syncMomoTransaction('collection', referenceId);
           if (result && result.status === 'SUCCESSFUL') {
             setStatus('success');
+            showToast('Payment verified successfully!', 'success');
             clearInterval(interval);
             if (onSuccess) setTimeout(onSuccess, 3000);
           } else if (result && result.status === 'FAILED') {
             setStatus('failed');
-            setError(result.reason || 'Transaction failed');
+            const errMsg = result.reason || 'Transaction failed';
+            setError(errMsg);
+            showToast(errMsg, 'error');
             clearInterval(interval);
           }
         } catch (err) {
@@ -84,7 +97,7 @@ export default function MomoPaymentForm({
       }, 5000);
     }
     return () => clearInterval(interval);
-  }, [status, referenceId, onSuccess]);
+  }, [status, referenceId, onSuccess, settings, showToast]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -106,9 +119,12 @@ export default function MomoPaymentForm({
       setReferenceId(result.referenceId);
       setStatus('pending');
       setPollCount(0);
+      showToast('Payment prompt sent to your phone!', 'success');
     } else {
       setStatus('idle');
-      setError(result.error || 'Failed to initiate payment');
+      const errMsg = result.error || 'Failed to initiate payment';
+      setError(errMsg);
+      showToast(errMsg, 'error');
     }
   }
 

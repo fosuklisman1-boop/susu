@@ -5,6 +5,7 @@ import { useState } from 'react'
 export default function PaystackButton({ 
   amount, 
   email, 
+  reference = null,
   metadata = {}, 
   onSuccess, 
   onClose,
@@ -28,6 +29,7 @@ export default function PaystackButton({
       email: email,
       amount: Math.round(Number(amount) * 100), // convert to kobo
       currency: 'GHS',
+      reference: reference || undefined,
       metadata: metadata,
       callback: (response) => {
         setLoading(false)

@@ -50,7 +50,7 @@ export async function createMomoPayment({ amount, phoneNumber, userId, planId = 
           amount,
           status: 'pending',
           provider: 'momo',
-          provider_reference: referenceId,
+          reference: referenceId,
           contributor_name: metadata.contributor_name || metadata.contributorName || 'Member',
           contributor_email: metadata.contributor_email || metadata.contributorEmail || null
         });
@@ -170,7 +170,7 @@ export async function syncMomoTransaction(type, referenceId) {
        // Check group contributions
        const { data: gContrib, error: gContribErr } = await supabase.from('group_contributions')
          .update({ status: collectionStatus, notes: status.reason || null })
-         .eq('provider_reference', referenceId)
+         .eq('reference', referenceId)
          .select('id');
 
        if (gContribErr) console.error(`❌ [MoMo Sync] DB Update failed for group contribution:`, gContribErr);

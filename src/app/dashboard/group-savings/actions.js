@@ -145,8 +145,12 @@ export async function joinGroup(prevState, formData) {
     role: 'member'
   })
 
-  if (joinError && joinError.code !== '23505') {
-    return { error: 'Could not join group. Please try again.' }
+  if (joinError) {
+    if (joinError.code === '23505') {
+      return { success: true, groupId: group.id, groupName: group.name, alreadyMember: true }
+    }
+    console.error('Join group error:', joinError)
+    return { error: `Could not join group: ${joinError.message}` }
   }
 
   revalidatePath('/dashboard/group-savings')
@@ -277,5 +281,45 @@ export async function recordGroupPayout(groupId, userId, amount, cycleNumber) {
   if (groupError) return { error: 'Payout recorded but failed to increment cycle.' }
   
   revalidatePath(`/dashboard/group-savings/${groupId}`)
+  return { success: true }
+}
+
+export async function recordPendingContribution({ amount, reference, planId = null, groupId = null, metadata = {} }) {
+  const supabase = await createClient()
+  
+  // Optional auth
+  const { data: { user } } = await supabase.auth.getUser()
+  const userId = user?.id || null
+
+  if (groupId) {
+    const { error } = await supabase.from('group_contributions').insert({
+      group_id: groupId,
+      user_id: userId,
+      amount: Number(amount),
+      status: 'pending',
+      provider: metadata.provider || 'paystack',
+      reference: reference,
+      contributor_name: metadata.contributor_name || metadata.contributorName || (user?.email ? user.email : 'Anonymous'),
+      contributor_email: metadata.contributor_email || (user?.email ? user.email : null)
+    })
+    if (error) {
+      console.error('❌ [Pending] Group Contribution log failed:', error)
+      return { error: 'Failed to initiate contribution record.' }
+    }
+  } else if (planId && userId) {
+    const { error } = await supabase.from('contributions').insert({
+      plan_id: planId,
+      user_id: userId,
+      amount: Number(amount),
+      status: 'pending',
+      provider: metadata.provider || 'paystack',
+      reference: reference
+    })
+    if (error) {
+      console.error('❌ [Pending] Standard Contribution log failed:', error)
+      return { error: 'Failed to initiate plan contribution record.' }
+    }
+  }
+
   return { success: true }
 }

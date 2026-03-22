@@ -1,15 +1,25 @@
 'use client'
 
-import { useState, useActionState } from 'react'
+import { useState, useActionState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Wallet, Landmark, Smartphone, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { createWithdrawal } from './actions'
+import { useToast } from '@/components/ToastProvider'
 
 export default function WithdrawClient({ availableBalance, userEmail, groupId, groupName, isGroup, savedMethods = [] }) {
   const router = useRouter()
+  const { showToast } = useToast()
   const [method, setMethod] = useState('MTN MoMo (Direct)')
   const [state, action, isPending] = useActionState(createWithdrawal, null)
+
+  useEffect(() => {
+    if (state?.success) {
+      showToast(`Withdrawal of GHS ${Number(state.amount).toFixed(2)} submitted!`, 'success')
+    } else if (state?.error) {
+      showToast(state.error, 'error')
+    }
+  }, [state, showToast])
 
   const [amount, setAmount] = useState('')
   const [payoutDetails, setPayoutDetails] = useState('')

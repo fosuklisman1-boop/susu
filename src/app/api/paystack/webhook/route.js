@@ -34,13 +34,13 @@ export async function POST(request) {
       if (planId) {
         const { data: plan } = await supabase.from('susu_plans').select('user_id').eq('id', planId).single()
         if (plan) {
-          const { data: existing } = await supabase.from('contributions').select('id').eq('payment_reference', reference).single()
+          const { data: existing } = await supabase.from('contributions').select('id').eq('reference', reference).single()
           if (!existing) {
             await supabase.from('contributions').insert({
               plan_id: planId,
               user_id: plan.user_id,
               amount: (amount / 100).toFixed(2),
-              payment_reference: reference,
+              reference: reference,
               status: 'success',
               provider: 'paystack'
             })
@@ -50,13 +50,13 @@ export async function POST(request) {
         // Find existing user by email from Paystack customer data
         const { data: userData } = await supabase.from('users').select('id').eq('email', customer.email).single()
         
-        const { data: existing } = await supabase.from('group_contributions').select('id').eq('payment_reference', reference).single()
+        const { data: existing } = await supabase.from('group_contributions').select('id').eq('reference', reference).single()
         if (!existing) {
           await supabase.from('group_contributions').insert({
             group_id: groupId,
             user_id: userData?.id || null, // Allow null for anonymous public contributions
             amount: (amount / 100).toFixed(2),
-            payment_reference: reference,
+            reference: reference,
             status: 'success',
             provider: 'paystack',
             contributor_name: metadata?.contributor_name || metadata?.contributorName || customer.first_name || 'Group Member',

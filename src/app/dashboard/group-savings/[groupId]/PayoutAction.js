@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import { recordGroupPayout } from '@/app/dashboard/group-savings/actions'
 import { Loader2, CheckCircle } from 'lucide-react'
+import { useToast } from '@/components/ToastProvider'
 
 export default function PayoutAction({ groupId, recipientId, amount, currentCycle, isAdmin }) {
+  const { showToast } = useToast()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
 
@@ -19,8 +21,9 @@ export default function PayoutAction({ groupId, recipientId, amount, currentCycl
     
     if (result.success) {
       setSuccess(true)
+      showToast(`Payout for Cycle ${currentCycle} recorded successfully!`, 'success')
     } else {
-      alert(result.error || 'Failed to record payout')
+      showToast(result.error || 'Failed to record payout', 'error')
     }
   }
 
