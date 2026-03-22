@@ -45,16 +45,17 @@ export default async function GroupDetailPage({ params }) {
     }, { onConflict: 'group_id,user_id' })
   }
 
-  // Fetch contributions (Show all for history, filter for totals)
+  // Fetch successful contributions for history and totals
   const { data: contributions, error: gcError } = await supabase
     .from('group_contributions')
     .select('id, amount, status, contributor_name, contributor_email, created_at, user_id, group_id')
     .eq('group_id', groupId)
+    .eq('status', 'success')
     .order('created_at', { ascending: false })
 
   console.log(`[DEBUG] GroupID=${groupId} | UserID=${user.id} | GC_Count=${contributions?.length} | Error=${gcError?.message || 'none'}`)
   
-  const totalContributed = contributions?.filter(c => c.status === 'success').reduce((sum, c) => sum + Number(c.amount), 0) || 0
+  const totalContributed = contributions?.reduce((sum, c) => sum + Number(c.amount), 0) || 0
   
   // Fetch group withdrawals (for history view)
   const { data: grpWd } = await supabase
@@ -251,26 +252,16 @@ export default async function GroupDetailPage({ params }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '500px', overflowY: 'auto', paddingRight: '8px' }}>
                 {contributions?.map((c, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: i < (contributions.length - 1) ? '1px solid #f3f4f6' : 'none', paddingBottom: '8px' }}>
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: c.status === 'success' ? '#16a34a' : (c.status === 'pending' ? '#f59e0b' : '#ef4444') }} />
-                      <div>
-                        <p style={{ fontSize: '0.85rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          {c.contributor_name || 'Anonymous'}
-                          {c.status !== 'success' && (
-                            <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', background: c.status === 'pending' ? '#fef3c7' : '#fee2e2', color: c.status === 'pending' ? '#92400e' : '#991b1b', fontWeight: '700', textTransform: 'uppercase' }}>
-                              {c.status}
-                            </span>
-                          )}
-                        </p>
-                        {isAdmin && (
-                          <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{c.contributor_email || 'No email provided'}</p>
-                        )}
-                        <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-                          {new Date(c.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
+                    <div>
+                      <p style={{ fontSize: '0.85rem', fontWeight: '600' }}>{c.contributor_name || 'Anonymous'}</p>
+                      {isAdmin && (
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{c.contributor_email || 'No email provided'}</p>
+                      )}
+                      <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                        {new Date(c.created_at).toLocaleDateString()}
+                      </span>
                     </div>
-                    <p style={{ fontSize: '0.9rem', fontWeight: '700', color: c.status === 'success' ? '#16a34a' : '#6b7280' }}>+GHS {Number(c.amount).toFixed(2)}</p>
+                    <p style={{ fontSize: '0.9rem', fontWeight: '700', color: '#16a34a' }}>+GHS {Number(c.amount).toFixed(2)}</p>
                   </div>
                 ))}
               </div>
