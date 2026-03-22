@@ -107,30 +107,49 @@ export default function SettingsForm({ group }) {
         {/* Financial Goals */}
         <div style={{ background: 'white', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
           <div style={{ marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#6b7280' }}>SET A TARGET GOAL?</label>
-              <input 
-                type="checkbox" 
-                checked={targetAmount !== '0' && targetAmount !== ''} 
-                onChange={e => setTargetAmount(e.target.checked ? '1000' : '0')}
-                style={{ width: '20px', height: '20px', accentColor: 'var(--primary)', cursor: 'pointer' }}
-              />
-            </div>
-            
-            {(targetAmount !== '0' && targetAmount !== '') && (
+            {group.group_type === 'contribution' ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#6b7280' }}>SET A TARGET GOAL?</label>
+                  <input 
+                    type="checkbox" 
+                    checked={targetAmount !== '0' && targetAmount !== ''} 
+                    onChange={e => setTargetAmount(e.target.checked ? '1000' : '0')}
+                    style={{ width: '20px', height: '20px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                  />
+                </div>
+                
+                {(targetAmount !== '0' && targetAmount !== '') && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '8px' }}>TARGET GOAL (GHS)</label>
+                    <input 
+                      type="number" 
+                      name="target_amount" 
+                      value={targetAmount} 
+                      onChange={(e) => setTargetAmount(e.target.value)}
+                      placeholder="0.00"
+                      style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e5e7eb', fontSize: '1rem', outline: 'none' }}
+                    />
+                  </div>
+                )}
+                <input type="hidden" name="target_amount" value={targetAmount || '0'} />
+              </>
+            ) : (
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '8px' }}>TARGET GOAL (GHS)</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: '#6b7280', marginBottom: '8px' }}>
+                  {group.group_type === 'challenge' ? 'GOAL PER MEMBER (GHS)' : 'TARGET GOAL (GHS)'}
+                </label>
                 <input 
                   type="number" 
                   name="target_amount" 
                   value={targetAmount} 
                   onChange={(e) => setTargetAmount(e.target.value)}
                   placeholder="0.00"
+                  required={group.group_type === 'challenge'}
                   style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1.5px solid #e5e7eb', fontSize: '1rem', outline: 'none' }}
                 />
               </div>
             )}
-            <input type="hidden" name="target_amount" value={targetAmount || '0'} />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: '#6b7280', marginBottom: '8px' }}>FREQUENCY</label>
