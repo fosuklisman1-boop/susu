@@ -9,7 +9,7 @@ export default async function PublicContributePage({ params }) {
   // Fetch group by invite code — public, no auth required
   const { data: group, error } = await supabase
     .from('savings_groups')
-    .select('id, name, group_type, target_amount, invite_code, is_fixed_contribution, contribution_amount, min_contribution_amount, status, start_date, end_date, frequency')
+    .select('id, name, group_type, target_amount, invite_code, is_fixed_contribution, contribution_amount, min_contribution_amount, status, start_date, end_date, frequency, max_members')
     .eq('invite_code', inviteCode.toUpperCase())
     .in('group_type', ['contribution', 'challenge'])
     .single()
@@ -26,6 +26,12 @@ export default async function PublicContributePage({ params }) {
   const totalRaised = contributions?.reduce((sum, c) => sum + Number(c.amount), 0) || 0
   const targetAmount = Number(group.target_amount || 0)
   const progressPct = targetAmount > 0 ? Math.min((totalRaised / targetAmount) * 100, 100) : 0
+
+  // Fetch member count for "Locked until full" check
+  const { count: memberCount } = await supabase
+    .from('group_members')
+    .select('*', { count: 'exact', head: true })
+    .eq('group_id', group.id)
 
   // Calculate if group is expired or closed
   const isClosed = group.status === 'closed'
@@ -47,9 +53,9 @@ export default async function PublicContributePage({ params }) {
 
   // Recent contributors (last 5)
   const recentContributors = contributions
-    ?.slice(-5)
-    .reverse()
-    .map(c => ({ name: c.contributor_name || 'Anonymous', amount: Number(c.amount) }))
+    ?.map(c => ({ name: c.contributor_name || 'Anonymous', amount: Number(c.amount) }))
+
+  const isLockedUntilFull = !!group.max_members && (memberCount || 0) < group.max_members
 
   return (
     <ContributeClient
@@ -60,6 +66,8 @@ export default async function PublicContributePage({ params }) {
       recentContributors={recentContributors || []}
       isExpired={isExpired}
       isClosed={isClosed}
+      isLockedUntilFull={isLockedUntilFull}
+      memberCount={memberCount || 0}
     />
   )
 }

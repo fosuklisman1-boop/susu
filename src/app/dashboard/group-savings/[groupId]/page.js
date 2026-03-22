@@ -144,6 +144,7 @@ export default async function GroupDetailPage({ params }) {
     }
     return false
   })()
+  const isLockedUntilFull = !!group.max_members && (members?.length || 0) < group.max_members
 
   const typeLabels = {
     rotating: 'Rotating Group Savings',
@@ -468,6 +469,10 @@ export default async function GroupDetailPage({ params }) {
                           <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#b91c1c', padding: '8px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '600' }}>
                             {isClosed ? 'Group Closed' : 'Goal Expired'}
                           </div>
+                        ) : isLockedUntilFull ? (
+                          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '8px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '600' }}>
+                            Waiting for {group.max_members - (members?.length || 0)} more members...
+                          </div>
                         ) : (
                           <PayoutAction 
                             groupId={groupId}
@@ -588,7 +593,7 @@ export default async function GroupDetailPage({ params }) {
         )}
 
         {/* ── CONTRIBUTE SECTION ───────────────────────── */}
-        {!(isClosed || isExpired) ? (
+        {!(isClosed || isExpired || isLockedUntilFull) ? (
           <GroupContributionForm 
             key={`${group.id}-${group.contribution_amount}-${group.is_fixed_contribution}-${group.min_contribution_amount}`}
             groupId={group.id}
@@ -599,14 +604,32 @@ export default async function GroupDetailPage({ params }) {
             minAmount={group.min_contribution_amount}
           />
         ) : (
-          <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '16px', padding: '24px', textAlign: 'center', marginBottom: '20px' }}>
-            <XCircle size={40} color="#b91c1c" style={{ margin: '0 auto 12px' }} />
-            <h4 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#b91c1c', marginBottom: '4px' }}>
-              Contributions are Disabled
-            </h4>
-            <p style={{ fontSize: '0.85rem', color: '#b91c1c', opacity: 0.8 }}>
-              {isClosed ? 'This group has been marked as CLOSED by the administrator.' : 'The set duration for this goal has elapsed.'}
-            </p>
+          <div style={{ 
+            background: isLockedUntilFull ? '#fffbeb' : '#fef2f2', 
+            border: isLockedUntilFull ? '1px solid #fde68a' : '1px solid #fee2e2', 
+            borderRadius: '16px', padding: '24px', textAlign: 'center', marginBottom: '20px' 
+          }}>
+            {isLockedUntilFull ? (
+              <>
+                <Users size={40} color="#d97706" style={{ margin: '0 auto 12px' }} />
+                <h4 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#92400e', marginBottom: '4px' }}>
+                  Awaiting Members
+                </h4>
+                <p style={{ fontSize: '0.85rem', color: '#d97706' }}>
+                  This group will start as soon as it reaches <strong>{group.max_members} members</strong> (Currently: {members?.length || 0})
+                </p>
+              </>
+            ) : (
+              <>
+                <XCircle size={40} color="#b91c1c" style={{ margin: '0 auto 12px' }} />
+                <h4 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#b91c1c', marginBottom: '4px' }}>
+                  Contributions are Disabled
+                </h4>
+                <p style={{ fontSize: '0.85rem', color: '#b91c1c', opacity: 0.8 }}>
+                  {isClosed ? 'This group has been marked as CLOSED by the administrator.' : 'The set duration for this goal has elapsed.'}
+                </p>
+              </>
+            )}
           </div>
         )}
 

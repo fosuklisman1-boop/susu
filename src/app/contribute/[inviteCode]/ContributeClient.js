@@ -4,7 +4,17 @@ import { useState } from 'react'
 import { Heart, Users, Share2, Check } from 'lucide-react'
 import UnifiedPaymentModal from '@/components/UnifiedPaymentModal'
 
-export default function ContributeClient({ group, totalRaised, targetAmount, progressPct, recentContributors, isExpired, isClosed }) {
+export default function ContributeClient({ 
+  group, 
+  totalRaised, 
+  targetAmount, 
+  progressPct, 
+  recentContributors, 
+  isExpired, 
+  isClosed,
+  isLockedUntilFull,
+  memberCount 
+}) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [amount, setAmount] = useState(group.is_fixed_contribution ? String(group.contribution_amount) : '')
@@ -51,6 +61,7 @@ export default function ContributeClient({ group, totalRaised, targetAmount, pro
         <p style={{ opacity: 0.85, fontSize: '0.9rem' }}>
           {isClosed ? 'This group is closed for new contributions.' : 
            isExpired ? 'This group goal duration has ended.' : 
+           isLockedUntilFull ? 'Waiting for more members to join before starting...' :
            'Help us reach our goal by contributing below'}
         </p>
         {(isClosed || isExpired) && (
@@ -104,9 +115,9 @@ export default function ContributeClient({ group, totalRaised, targetAmount, pro
             </div>
           )}
 
-          {!(isClosed || isExpired) ? (
+          {!(isClosed || isExpired || isLockedUntilFull) ? (
             <form onSubmit={handleOpenModal} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {/* Form fields... (keeping existing) */}
+              {/* Form fields... */}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                   <label style={{ display: 'block', fontWeight: '600', fontSize: '0.85rem' }}>Your Name</label>
@@ -164,6 +175,19 @@ export default function ContributeClient({ group, totalRaised, targetAmount, pro
                 {`CONTRIBUTE${amount ? ` GHS ${amount}` : ''}`}
               </button>
             </form>
+          ) : isLockedUntilFull ? (
+            <div style={{ textAlign: 'center', padding: '24px 0' }}>
+              <div style={{ color: '#d97706', marginBottom: '12px' }}>
+                <Users size={48} style={{ margin: '0 auto' }} />
+              </div>
+              <h4 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#111827', marginBottom: '8px' }}>
+                Group Start Pending
+              </h4>
+              <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>
+                We are waiting for <strong>{group.max_members} members</strong> to join before starting.<br />
+                Currently has <strong>{memberCount} member{memberCount !== 1 ? 's' : ''}</strong>.
+              </p>
+            </div>
           ) : (
             <div style={{ textAlign: 'center', padding: '24px 0' }}>
               <div style={{ color: '#ef4444', marginBottom: '12px' }}>
