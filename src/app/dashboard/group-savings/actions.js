@@ -116,7 +116,7 @@ export async function joinGroup(prevState, formData) {
 
   const { data: group, error: findError } = await supabase
     .from('savings_groups')
-    .select('id, name, group_type')
+    .select('id, name, group_type, max_members')
     .eq('invite_code', inviteCode)
     .single()
 
@@ -124,7 +124,19 @@ export async function joinGroup(prevState, formData) {
     return { error: `No group found with code "${inviteCode}". Please check and try again.` }
   }
 
-  // Check if already a member
+  // 1. Check if group is full
+  if (group.max_members) {
+    const { count } = await supabase
+      .from('group_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('group_id', group.id)
+    
+    if ((count || 0) >= group.max_members) {
+      return { error: `Sorry, this group has reached its maximum limit of ${group.max_members} members.` }
+    }
+  }
+
+  // 2. Check if already a member
   const { data: existing } = await supabase
     .from('group_members')
     .select('role')
