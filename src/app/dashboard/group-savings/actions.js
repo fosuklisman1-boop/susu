@@ -117,13 +117,30 @@ export async function joinGroup(prevState, formData) {
 
   const { data: group, error: findError } = await supabase
     .from('savings_groups')
-    .select('id, name, group_type, max_members')
+    .select('id, name, group_type, max_members, status, start_date, frequency, end_date')
     .eq('invite_code', inviteCode)
     .single()
 
   if (findError || !group) {
     return { error: `No group found with code "${inviteCode}". Please check and try again.` }
   }
+
+  // 0. Check if group is closed or expired
+  const isClosed = group.status === 'closed'
+  const isExpired = (() => {
+    if (group.end_date && new Date() > new Date(group.end_date)) return true
+    if (group.start_date && group.frequency && !isNaN(Number(group.frequency))) {
+      const start = new Date(group.start_date)
+      const durationDays = Number(group.frequency)
+      const end = new Date(start)
+      end.setDate(end.getDate() + durationDays)
+      return new Date() > end
+    }
+    return false
+  })()
+
+  if (isClosed) return { error: `Sorry, this group is closed for new members.` }
+  if (isExpired) return { error: `Sorry, this group goal duration has ended.` }
 
   // 1. Check if group is full (ONLY for rotating groups)
   if (group.group_type === 'rotating' && group.max_members) {

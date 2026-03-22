@@ -540,7 +540,7 @@ export default async function GroupDetailPage({ params }) {
 
             {/* Admin: Danger Zone */}
             <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '16px', padding: '16px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <h4 style={{ color: '#b91c1c', fontSize: '0.9rem', fontWeight: '700', marginBottom: '8px' }}>⚠️ Admin Controls</h4>
+              <h4 style={{ color: '#b91c1c', fontSize: '0.9rem', fontWeight: '700', marginBottom: '8px' }}>⚠️ Admin Funds Management</h4>
               
               <GroupWithdrawalForm 
                 availableBalance={availablePot}
@@ -548,10 +548,6 @@ export default async function GroupDetailPage({ params }) {
                 groupName={group.name}
                 userEmail={user.email}
               />
-
-              <button style={{ background: '#b91c1c', color: 'white', border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <XCircle size={16} /> Close / End This Group
-              </button>
             </div>
           </>
         )}
@@ -592,15 +588,27 @@ export default async function GroupDetailPage({ params }) {
         )}
 
         {/* ── CONTRIBUTE SECTION ───────────────────────── */}
-        <GroupContributionForm 
-          key={`${group.id}-${group.contribution_amount}-${group.is_fixed_contribution}-${group.min_contribution_amount}`}
-          groupId={group.id}
-          userEmail={user.email}
-          userId={user.id}
-          isFixed={group.is_fixed_contribution ?? true}
-          fixedAmount={group.contribution_amount}
-          minAmount={group.min_contribution_amount}
-        />
+        {!(isClosed || isExpired) ? (
+          <GroupContributionForm 
+            key={`${group.id}-${group.contribution_amount}-${group.is_fixed_contribution}-${group.min_contribution_amount}`}
+            groupId={group.id}
+            userEmail={user.email}
+            userId={user.id}
+            isFixed={group.is_fixed_contribution ?? true}
+            fixedAmount={group.contribution_amount}
+            minAmount={group.min_contribution_amount}
+          />
+        ) : (
+          <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '16px', padding: '24px', textAlign: 'center', marginBottom: '20px' }}>
+            <XCircle size={40} color="#b91c1c" style={{ margin: '0 auto 12px' }} />
+            <h4 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#b91c1c', marginBottom: '4px' }}>
+              Contributions are Disabled
+            </h4>
+            <p style={{ fontSize: '0.85rem', color: '#b91c1c', opacity: 0.8 }}>
+              {isClosed ? 'This group has been marked as CLOSED by the administrator.' : 'The set duration for this goal has elapsed.'}
+            </p>
+          </div>
+        )}
 
       </div>
     </div>
