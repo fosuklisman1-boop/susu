@@ -29,7 +29,7 @@ export default function CreateGroupPage() {
   
   const [fields, setFields] = useState({
     name: '', group_type: '', target_amount: '', contribution_amount: '',
-    frequency: '', max_members: '', payout_method: '', startDate: '', endDate: '',
+    frequency: '7', max_members: '', payout_method: '', startDate: '', endDate: '',
     is_fixed_contribution: 'true', min_contribution_amount: '0'
   })
   const handle = (e) => setFields(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -154,14 +154,15 @@ export default function CreateGroupPage() {
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>Member Get Paid</label>
-                <select name="frequency" value={fields.frequency} onChange={handle}
-                  style={{...inputStyle, WebkitAppearance: 'none', appearance: 'none'}} required>
-                  <option value="" disabled>Choose a payout Duration</option>
-                  <option value="weekly">Every Week</option>
-                  <option value="biweekly">Every 2 Weeks</option>
-                  <option value="monthly">Every Month</option>
-                </select>
+                <label style={labelStyle}>Payout Every (Number of Days)</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input type="number" name="frequency" placeholder="7"
+                    value={fields.frequency} onChange={handle} style={{...inputStyle, flex: 1}} required />
+                  <span style={{ fontSize: '0.9rem', color: '#6b7280', fontWeight: '600' }}>Days</span>
+                </div>
+                <p style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '6px' }}>
+                  e.g. 7 for Weekly, 30 for Monthly, 1 for Daily.
+                </p>
               </div>
               <div>
                 <label style={labelStyle}>Maximum Members (Total People)</label>

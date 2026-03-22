@@ -205,9 +205,17 @@ export default async function GroupDetailPage({ params }) {
                     if (!group.start_date || !myPosition) return 'Not set yet'
                     const d = new Date(group.start_date)
                     const offset = (myPosition - 1)
-                    if (group.frequency === 'weekly') d.setDate(d.getDate() + offset * 7)
-                    else if (group.frequency === 'biweekly') d.setDate(d.getDate() + offset * 14)
-                    else if (group.frequency === 'monthly') d.setMonth(d.getMonth() + offset)
+                    
+                    let freqDays = 7
+                    if (!isNaN(Number(group.frequency))) {
+                      freqDays = Number(group.frequency)
+                    } else {
+                      if (group.frequency === 'weekly') freqDays = 7
+                      else if (group.frequency === 'biweekly') freqDays = 14
+                      else if (group.frequency === 'monthly') freqDays = 30
+                    }
+
+                    d.setDate(d.getDate() + offset * freqDays)
                     return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                   })()}
                 </p>
@@ -417,10 +425,18 @@ export default async function GroupDetailPage({ params }) {
                           {(() => {
                             if (!group.start_date) return 'TBD'
                             const d = new Date(group.start_date)
-                            const offset = i
-                            if (group.frequency === 'weekly') d.setDate(d.getDate() + offset * 7)
-                            else if (group.frequency === 'biweekly') d.setDate(d.getDate() + offset * 14)
-                            else if (group.frequency === 'monthly') d.setMonth(d.getMonth() + offset)
+                          const offset = i
+                          
+                          let freqDays = 7
+                          if (!isNaN(Number(group.frequency))) {
+                            freqDays = Number(group.frequency)
+                          } else {
+                            if (group.frequency === 'weekly') freqDays = 7
+                            else if (group.frequency === 'biweekly') freqDays = 14
+                            else if (group.frequency === 'monthly') freqDays = 30
+                          }
+
+                          d.setDate(d.getDate() + offset * freqDays)
                             return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
                           })()}
                         </p>
