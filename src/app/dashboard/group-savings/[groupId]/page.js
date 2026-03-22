@@ -342,24 +342,42 @@ export default async function GroupDetailPage({ params }) {
               <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem' }}>Members join from the Group Savings page</p>
             </div>
 
-            {/* Admin: Members List with Remove */}
-            <h3 style={{ fontSize: '1.05rem', fontWeight: '700', marginBottom: '12px' }}>
-              👥 Manage Members ({members?.length || 0})
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
-              {members?.map((m, i) => (
-                <div key={i} style={{ background: 'white', borderRadius: '14px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: m.role === 'admin' ? '#b71c1c' : '#1f2937', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.85rem' }}>
-                      {m.role === 'admin' ? 'A' : 'M'}
+            {/* Admin: Members List with Remove (Hidden for Contribution groups in favor of Contributors list) */}
+            {group.group_type !== 'contribution' && (
+              <>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: '700', marginBottom: '12px' }}>
+                  👥 Manage Members ({members?.length || 0})
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+                  {members?.map((m, i) => (
+                    <div key={i} style={{ background: 'white', borderRadius: '14px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: m.role === 'admin' ? '#b71c1c' : '#1f2937', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.85rem' }}>
+                          {m.role === 'admin' ? 'A' : 'M'}
+                        </div>
+                        <div>
+                          <p style={{ fontSize: '0.85rem', fontWeight: '600' }}>{m.user_id === user.id ? 'You' : `Member ${i + 1}`}</p>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            Joined {m.created_at ? new Date(m.created_at).toLocaleDateString('en-GB') : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ background: m.role === 'admin' ? '#fef2f2' : '#f0fdf4', color: m.role === 'admin' ? '#b91c1c' : '#16a34a', fontSize: '0.75rem', fontWeight: '600', padding: '4px 10px', borderRadius: '20px' }}>
+                          {m.role}
+                        </span>
+                        {m.user_id !== user.id && (
+                          <button title="Remove member"
+                            style={{ background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                            <UserMinus size={14} />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <p style={{ fontSize: '0.85rem', fontWeight: '600' }}>{m.user_id === user.id ? 'You' : `Member ${i + 1}`}</p>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        Joined {m.created_at ? new Date(m.created_at).toLocaleDateString('en-GB') : 'N/A'}
-                      </p>
-                    </div>
-                  </div>
+                  ))}
+                </div>
+              </>
+            )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ background: m.role === 'admin' ? '#fef2f2' : '#f0fdf4', color: m.role === 'admin' ? '#b91c1c' : '#16a34a', fontSize: '0.75rem', fontWeight: '600', padding: '4px 10px', borderRadius: '20px' }}>
                       {m.role}
