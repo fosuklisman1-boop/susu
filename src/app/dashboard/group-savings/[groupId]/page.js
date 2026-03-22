@@ -248,9 +248,9 @@ export default async function GroupDetailPage({ params }) {
             {contributions?.length === 0 ? (
               <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '20px 0' }}>No contributions yet. Start the ball rolling!</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {contributions?.slice(0, 10).map((c, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: i < 9 ? '1px solid #f3f4f6' : 'none', paddingBottom: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '500px', overflowY: 'auto', paddingRight: '8px' }}>
+                {contributions?.map((c, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: i < (contributions.length - 1) ? '1px solid #f3f4f6' : 'none', paddingBottom: '8px' }}>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                       <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: c.status === 'success' ? '#16a34a' : (c.status === 'pending' ? '#f59e0b' : '#ef4444') }} />
                       <div>
