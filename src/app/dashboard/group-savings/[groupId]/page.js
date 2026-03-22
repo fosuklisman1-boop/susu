@@ -376,46 +376,65 @@ export default async function GroupDetailPage({ params }) {
           <div style={{ background: 'white', borderRadius: '16px', padding: '20px', marginBottom: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.03)' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '16px' }}>🔄 Payout Cycle</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {sortedMembers?.map((m, i) => {
-                const isMe = m.user_id === user.id
-                const cycleNum = i + 1
-                const isPaid = payouts?.some(p => p.cycle_number === cycleNum && p.status === 'completed')
-                const isCurrent = cycleNum === currentCycle
+              {(() => {
+                const totalSlots = Math.max(group.max_members || 0, sortedMembers?.length || 0)
+                const allCycles = Array.from({ length: totalSlots }, (_, i) => {
+                  const member = sortedMembers?.[i] || null
+                  return { index: i, member }
+                })
 
-                return (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', opacity: cycleNum < currentCycle ? 0.6 : 1 }}>
-                    <div style={{ 
-                      width: '28px', height: '28px', borderRadius: '50%', 
-                      background: isPaid ? '#16a34a' : (isCurrent ? '#FDBE2C' : '#f3f4f6'), 
-                      color: isPaid || isCurrent ? 'white' : '#374151', 
-                      fontSize: '0.8rem', fontWeight: '700', display: 'flex', 
-                      alignItems: 'center', justifyContent: 'center' 
-                    }}>
-                      {isPaid ? <CheckCircle2 size={16} /> : cycleNum}
+                return allCycles.map(({ index: i, member: m }) => {
+                  const isMe = m?.user_id === user.id
+                  const cycleNum = i + 1
+                  const isPaid = payouts?.some(p => p.cycle_number === cycleNum && p.status === 'completed')
+                  const isCurrent = cycleNum === currentCycle
+
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', opacity: cycleNum < currentCycle ? 0.6 : 1 }}>
+                      <div style={{ 
+                        width: '28px', height: '28px', borderRadius: '50%', 
+                        background: isPaid ? '#16a34a' : (isCurrent ? '#FDBE2C' : '#f3f4f6'), 
+                        color: isPaid || isCurrent ? 'white' : '#374151', 
+                        fontSize: '0.8rem', fontWeight: '700', display: 'flex', 
+                        alignItems: 'center', justifyContent: 'center' 
+                      }}>
+                        {isPaid ? <CheckCircle2 size={16} /> : cycleNum}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: '0.85rem', fontWeight: isMe ? '700' : '600', marginBottom: '2px' }}>
+                          {isMe ? 'You' : (m?.user_id ? `Member ${i + 1}` : <span style={{ color: '#9ca3af', fontWeight: '400' }}>Waiting for member...</span>)}
+                          {isPaid && <span style={{ marginLeft: '8px', fontSize: '0.65rem', color: '#16a34a', fontWeight: '800' }}>PAID</span>}
+                        </p>
+                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          {(() => {
+                            if (!group.start_date) return 'TBD'
+                            const d = new Date(group.start_date)
+                            const offset = i
+                            if (group.frequency === 'weekly') d.setDate(d.getDate() + offset * 7)
+                            else if (group.frequency === 'biweekly') d.setDate(d.getDate() + offset * 14)
+                            else if (group.frequency === 'monthly') d.setMonth(d.getMonth() + offset)
+                            return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+                          })()}
+                        </p>
+                      </div>
+                      {isCurrent && m?.user_id && !isPaid && (
+                        <PayoutAction 
+                          groupId={groupId}
+                          recipientId={m.user_id}
+                          amount={Number(group.contribution_amount) * (group.max_members || members?.length || 1)}
+                          currentCycle={currentCycle}
+                          isAdmin={isAdmin}
+                        />
+                      )}
+                      {(!isCurrent || !m?.user_id) && (
+                        <span style={{ fontSize: '0.75rem', fontWeight: '600', color: isPaid ? '#16a34a' : '#6b7280' }}>
+                          {isPaid ? 'COMPLETED' : `Cycle ${cycleNum}`}
+                        </span>
+                      )}
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontSize: '0.85rem', fontWeight: isMe ? '700' : '600' }}>
-                        {isMe ? 'You' : (m.user_id ? `Member ${i + 1}` : 'Unknown Member')}
-                        {isPaid && <span style={{ marginLeft: '8px', fontSize: '0.65rem', color: '#16a34a', fontWeight: '800' }}>PAID</span>}
-                      </p>
-                    </div>
-                    {isCurrent && !isPaid && (
-                      <PayoutAction 
-                        groupId={groupId}
-                        recipientId={m.user_id}
-                        amount={Number(group.contribution_amount) * (members?.length || 1)}
-                        currentCycle={currentCycle}
-                        isAdmin={isAdmin}
-                      />
-                    )}
-                    {!isCurrent && (
-                      <span style={{ fontSize: '0.75rem', fontWeight: '600', color: isPaid ? '#16a34a' : '#6b7280' }}>
-                        {isPaid ? 'COMPLETED' : `Cycle ${cycleNum}`}
-                      </span>
-                    )}
-                  </div>
-                )
-              })}
+                  )
+                })
+              })()}
             </div>
           </div>
         )}
