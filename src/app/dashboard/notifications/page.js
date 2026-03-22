@@ -80,7 +80,7 @@ export default function NotificationsPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                   <h4 style={{ fontSize: '0.95rem', fontWeight: '700' }}>{n.title}</h4>
                   <span style={{ fontSize: '0.7rem', color: '#9ca3af' }}>
-                    {new Date(n.created_at).toLocaleDateString('en-GB', { day: 'prev', month: 'short' })}
+                    {new Date(n.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                   </span>
                 </div>
                 <p style={{ fontSize: '0.85rem', color: '#4b5563', lineHeight: '1.4' }}>{n.message}</p>
