@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Settings, UserMinus, XCircle, Landmark } from 'lucide-react'
+import { ArrowLeft, Settings, UserMinus, XCircle, Landmark, Users, Trophy } from 'lucide-react'
 import PaystackButton from '@/components/PaystackButton'
 import GroupContributionForm from './GroupContributionForm'
 import GroupWithdrawalForm from './GroupWithdrawalForm'
