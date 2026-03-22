@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Heart, Users, Share2, Check } from 'lucide-react'
 import UnifiedPaymentModal from '@/components/UnifiedPaymentModal'
 
-export default function ContributeClient({ group, totalRaised, targetAmount, progressPct, recentContributors }) {
+export default function ContributeClient({ group, totalRaised, targetAmount, progressPct, recentContributors, isExpired, isClosed }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [amount, setAmount] = useState(group.is_fixed_contribution ? String(group.contribution_amount) : '')
@@ -48,8 +48,16 @@ export default function ContributeClient({ group, totalRaised, targetAmount, pro
         <div style={{ width: '64px', height: '64px', background: 'rgba(255,255,255,0.2)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '1.8rem' }}>
           <Heart size={32} />
         </div>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>{group.name}</h1>
-        <p style={{ opacity: 0.85, fontSize: '0.9rem' }}>Help us reach our goal by contributing below</p>
+        <p style={{ opacity: 0.85, fontSize: '0.9rem' }}>
+          {isClosed ? 'This group is closed for new contributions.' : 
+           isExpired ? 'This group goal duration has ended.' : 
+           'Help us reach our goal by contributing below'}
+        </p>
+        {(isClosed || isExpired) && (
+          <div style={{ marginTop: '12px', display: 'inline-block', background: '#fee2e2', color: '#b91c1c', padding: '6px 16px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '800' }}>
+            {isClosed ? 'CLOSED' : 'ENDED'}
+          </div>
+        )}
       </div>
 
       <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -96,69 +104,79 @@ export default function ContributeClient({ group, totalRaised, targetAmount, pro
             </div>
           )}
 
-          <form onSubmit={handleOpenModal} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <label style={{ display: 'block', fontWeight: '600', fontSize: '0.85rem' }}>Your Name</label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#6b7280', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={isAnonymous}
-                    onChange={e => { setIsAnonymous(e.target.checked); if (e.target.checked) setName('') }}
-                    style={{ width: '16px', height: '16px', accentColor: '#d32f2f', cursor: 'pointer' }}
-                  />
-                  Stay Anonymous
-                </label>
-              </div>
-              {isAnonymous ? (
-                <div style={{ padding: '12px 16px', border: '1px dashed #d1d5db', borderRadius: '10px', fontSize: '0.9rem', color: '#9ca3af', background: '#f9fafb' }}>
-                  🕶️ Your name will appear as <strong>Anonymous</strong>
-                </div>
-              ) : (
-                <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Enter your name"
-                  style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '10px', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} />
-              )}
-            </div>
-            <div>
-              <label style={{ display: 'block', fontWeight: '600', fontSize: '0.85rem', marginBottom: '6px' }}>Email <span style={{ color: '#d32f2f' }}>*</span></label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@email.com" required
-                style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '10px', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} />
-            </div>
-
-            {/* Quick amount buttons - Hidden for fixed contribution */}
-            {!group.is_fixed_contribution && (
+          {!(isClosed || isExpired) ? (
+            <form onSubmit={handleOpenModal} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Form fields... (keeping existing) */}
               <div>
-                <label style={{ display: 'block', fontWeight: '600', fontSize: '0.85rem', marginBottom: '8px' }}>Amount (GHS)</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '10px' }}>
-                  {quickAmounts.map(a => (
-                    <button key={a} type="button" onClick={() => setAmount(String(a))}
-                      style={{ padding: '10px', border: `2px solid ${amount === String(a) ? '#d32f2f' : '#e5e7eb'}`, borderRadius: '8px', background: amount === String(a) ? '#fef2f2' : 'white', color: amount === String(a) ? '#d32f2f' : '#374151', fontWeight: '600', fontSize: '0.9rem', cursor: 'pointer' }}>
-                      GHS {a}
-                    </button>
-                  ))}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontWeight: '600', fontSize: '0.85rem' }}>Your Name</label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#6b7280', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={isAnonymous}
+                      onChange={e => { setIsAnonymous(e.target.checked); if (e.target.checked) setName('') }}
+                      style={{ width: '16px', height: '16px', accentColor: '#d32f2f', cursor: 'pointer' }}
+                    />
+                    Stay Anonymous
+                  </label>
                 </div>
-                <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Or enter custom amount"
-                  style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '10px', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} />
-                {group.min_contribution_amount > 0 && (
-                  <p style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '6px' }}>Minimum: GHS {group.min_contribution_amount}</p>
+                {isAnonymous ? (
+                  <div style={{ padding: '12px 16px', border: '1px dashed #d1d5db', borderRadius: '10px', fontSize: '0.9rem', color: '#9ca3af', background: '#f9fafb' }}>
+                    🕶️ Your name will appear as <strong>Anonymous</strong>
+                  </div>
+                ) : (
+                  <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Enter your name"
+                    style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '10px', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} />
                 )}
               </div>
-            )}
-
-            {group.is_fixed_contribution && (
-              <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
-                <p style={{ fontSize: '0.85rem', color: '#991b1b', fontWeight: '600', marginBottom: '4px' }}>FIXED CONTRIBUTION AMOUNT</p>
-                <h1 style={{ fontSize: '2rem', fontWeight: '800', color: '#d32f2f' }}>GHS {amount}</h1>
-                <p style={{ fontSize: '0.75rem', color: '#b91c1c', opacity: 0.8 }}>This group has a set contribution amount for all members.</p>
-                <input type="hidden" name="amount" value={amount} />
+              <div>
+                <label style={{ display: 'block', fontWeight: '600', fontSize: '0.85rem', marginBottom: '6px' }}>Email <span style={{ color: '#d32f2f' }}>*</span></label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@email.com" required
+                  style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '10px', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} />
               </div>
-            )}
 
-            <button type="submit"
-              style={{ width: '100%', background: '#d32f2f', color: 'white', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '1rem', fontWeight: '700', cursor: 'pointer' }}>
-              {`CONTRIBUTE${amount ? ` GHS ${amount}` : ''}`}
-            </button>
-          </form>
+              {!group.is_fixed_contribution && (
+                <div>
+                  <label style={{ display: 'block', fontWeight: '600', fontSize: '0.85rem', marginBottom: '8px' }}>Amount (GHS)</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '10px' }}>
+                    {quickAmounts.map(a => (
+                      <button key={a} type="button" onClick={() => setAmount(String(a))}
+                        style={{ padding: '10px', border: `2px solid ${amount === String(a) ? '#d32f2f' : '#e5e7eb'}`, borderRadius: '8px', background: amount === String(a) ? '#fef2f2' : 'white', color: amount === String(a) ? '#d32f2f' : '#374151', fontWeight: '600', fontSize: '0.9rem', cursor: 'pointer' }}>
+                        GHS {a}
+                      </button>
+                    ))}
+                  </div>
+                  <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="Or enter custom amount"
+                    style={{ width: '100%', padding: '12px 16px', border: '1px solid #d1d5db', borderRadius: '10px', fontSize: '0.9rem', outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+              )}
+
+              {group.is_fixed_contribution && (
+                <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                  <p style={{ fontSize: '0.85rem', color: '#991b1b', fontWeight: '600', marginBottom: '4px' }}>FIXED CONTRIBUTION AMOUNT</p>
+                  <h1 style={{ fontSize: '2rem', fontWeight: '800', color: '#d32f2f' }}>GHS {amount}</h1>
+                  <input type="hidden" name="amount" value={amount} />
+                </div>
+              )}
+
+              <button type="submit"
+                style={{ width: '100%', background: '#d32f2f', color: 'white', border: 'none', borderRadius: '12px', padding: '16px', fontSize: '1rem', fontWeight: '700', cursor: 'pointer' }}>
+                {`CONTRIBUTE${amount ? ` GHS ${amount}` : ''}`}
+              </button>
+            </form>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '24px 0' }}>
+              <div style={{ color: '#ef4444', marginBottom: '12px' }}>
+                <XCircle size={48} style={{ margin: '0 auto' }} />
+              </div>
+              <h4 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#111827', marginBottom: '8px' }}>
+                This group is no longer accepting contributions
+              </h4>
+              <p style={{ fontSize: '0.9rem', color: '#6b7280' }}>
+                {isClosed ? 'The administrator has closed this group.' : 'The set duration for this goal has elapsed.'}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Share Link Card */}

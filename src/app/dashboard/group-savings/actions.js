@@ -348,3 +348,38 @@ export async function recordPendingContribution({ amount, reference, planId = nu
 
   return { success: true }
 }
+
+export async function updateGroupStatus(groupId, newStatus) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  // Verify Admin or Creator
+  const { data: group } = await supabase
+    .from('savings_groups')
+    .select('created_by')
+    .eq('id', groupId)
+    .single()
+
+  if (!group) return { error: 'Group not found.' }
+
+  const { data: member } = await supabase
+    .from('group_members')
+    .select('role')
+    .eq('group_id', groupId)
+    .eq('user_id', user.id)
+    .single()
+
+  const isAuthorized = group.created_by === user.id || member?.role === 'admin'
+  if (!isAuthorized) return { error: 'Unauthorized' }
+
+  const { error } = await supabase
+    .from('savings_groups')
+    .update({ status: newStatus })
+    .eq('id', groupId)
+
+  if (error) return { error: error.message }
+  revalidatePath(`/dashboard/group-savings/${groupId}`)
+  revalidatePath(`/dashboard/group-savings/${groupId}/settings`)
+  return { success: true }
+}

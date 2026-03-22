@@ -2,8 +2,8 @@
 
 import { useState, useActionState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, Info, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
-import { updateGroup } from '@/app/dashboard/group-savings/actions'
+import { Save, Info, AlertCircle, CheckCircle, Loader2, XCircle, Power } from 'lucide-react'
+import { updateGroup, updateGroupStatus } from '@/app/dashboard/group-savings/actions'
 
 export default function SettingsForm({ group }) {
   const router = useRouter()
@@ -27,6 +27,25 @@ export default function SettingsForm({ group }) {
   })()
   const [frequency, setFrequency] = useState(initialFreq)
   const [maxMembers, setMaxMembers] = useState(group.max_members || '')
+  const [payoutMethod, setPayoutMethod] = useState(group.payout_method || 'mobile_money')
+  const [status, setStatus] = useState(group.status || 'active')
+  const [statusLoading, setStatusLoading] = useState(false)
+
+  const handleStatusToggle = async () => {
+    const nextStatus = status === 'active' ? 'closed' : 'active'
+    if (!confirm(`Are you sure you want to ${nextStatus === 'closed' ? 'CLOSE' : 'RE-OPEN'} this group?`)) return
+    
+    setStatusLoading(true)
+    const res = await updateGroupStatus(group.id, nextStatus)
+    setStatusLoading(false)
+    
+    if (res.success) {
+      setStatus(nextStatus)
+      router.refresh()
+    } else {
+      alert(res.error || 'Failed to update status')
+    }
+  }
 
   const isSuccess = state?.success
 
@@ -210,12 +229,40 @@ export default function SettingsForm({ group }) {
         <button 
           type="submit" 
           disabled={isPending}
-          style={{ width: '100%', padding: '16px', background: 'var(--primary)', color: 'white', borderRadius: '14px', border: 'none', fontSize: '1.1rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', opacity: isPending ? 0.7 : 1 }}
+          style={{ width: '100%', padding: '16px', borderRadius: '12px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: '700', cursor: isPending ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: isPending ? 0.7 : 1 }}
         >
-          {isPending ? <Loader2 size={24} className="animate-spin" /> : <><Save size={20} /> Save Changes</>}
+          {isPending ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+          SAVE CHANGES
         </button>
-
       </form>
+
+      {/* Danger Zone / Status Management */}
+      <div style={{ marginTop: '32px', borderTop: '2px solid #f3f4f6', paddingTop: '24px' }}>
+        <h4 style={{ fontSize: '0.9rem', fontWeight: '700', color: '#b91c1c', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <AlertCircle size={16} /> DANGER ZONE
+        </h4>
+        
+        <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '16px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <p style={{ fontWeight: '700', color: '#991b1b', fontSize: '0.9rem', marginBottom: '4px' }}>
+              {status === 'active' ? 'Close Group' : 'Re-open Group'}
+            </p>
+            <p style={{ fontSize: '0.75rem', color: '#b91c1c', opacity: 0.8 }}>
+              {status === 'active' 
+                ? 'New contributions will be disabled. Existing records are kept.' 
+                : 'Savers will be able to contribute again.'}
+            </p>
+          </div>
+          <button 
+            onClick={handleStatusToggle}
+            disabled={statusLoading}
+            style={{ padding: '10px 16px', borderRadius: '10px', background: status === 'active' ? '#ef4444' : '#22c55e', color: 'white', border: 'none', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            {statusLoading ? <Loader2 size={16} className="animate-spin" /> : (status === 'active' ? <XCircle size={16} /> : <Power size={16} />)}
+            {status === 'active' ? 'Close' : 'Re-open'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

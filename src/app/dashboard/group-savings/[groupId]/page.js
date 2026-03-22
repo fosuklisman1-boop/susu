@@ -130,6 +130,20 @@ export default async function GroupDetailPage({ params }) {
   // Find who to pay in current cycle
   const currentRecipient = sortedMembers?.[currentCycle - 1]
   const isRecipientPaid = payouts?.some(p => p.cycle_number === currentCycle)
+  
+  // Lifecycle Status
+  const isClosed = group.status === 'closed'
+  const isExpired = (() => {
+    if (group.end_date && new Date() > new Date(group.end_date)) return true
+    if (group.start_date && group.frequency && !isNaN(Number(group.frequency))) {
+      const start = new Date(group.start_date)
+      const durationDays = Number(group.frequency)
+      const end = new Date(start)
+      end.setDate(end.getDate() + durationDays)
+      return new Date() > end
+    }
+    return false
+  })()
 
   const typeLabels = {
     rotating: 'Rotating Group Savings',
@@ -147,7 +161,13 @@ export default async function GroupDetailPage({ params }) {
         <Link href="/dashboard/group-savings" style={{ color: 'white' }}>
           <ArrowLeft size={20} />
         </Link>
-        <h2 style={{ fontSize: '1.1rem', fontWeight: '600', flex: 1 }}>{group.name}</h2>
+        <h2 style={{ fontSize: '1.1rem', fontWeight: '600' }}>{group.name}</h2>
+        {(isClosed || isExpired) && (
+          <span style={{ background: '#fee2e2', color: '#b91c1c', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: '800' }}>
+            {isClosed ? 'CLOSED' : 'EXPIRED'}
+          </span>
+        )}
+        <div style={{ flex: 1 }}></div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <span style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: '600' }}>
             {typeLabels[group.group_type] || group.group_type}
@@ -444,13 +464,19 @@ export default async function GroupDetailPage({ params }) {
                         </p>
                       </div>
                       {isCurrent && m?.user_id && !isPaid && (
-                        <PayoutAction 
-                          groupId={groupId}
-                          recipientId={m.user_id}
-                          amount={Number(group.contribution_amount) * (group.max_members || members?.length || 1)}
-                          currentCycle={currentCycle}
-                          isAdmin={isAdmin}
-                        />
+                        (isClosed || isExpired) ? (
+                          <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#b91c1c', padding: '8px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '600' }}>
+                            {isClosed ? 'Group Closed' : 'Goal Expired'}
+                          </div>
+                        ) : (
+                          <PayoutAction 
+                            groupId={groupId}
+                            recipientId={m.user_id}
+                            amount={Number(group.contribution_amount) * (group.max_members || members?.length || 1)}
+                            currentCycle={currentCycle}
+                            isAdmin={isAdmin}
+                          />
+                        )
                       )}
                       {(!isCurrent || !m?.user_id) && (
                         <span style={{ fontSize: '0.75rem', fontWeight: '600', color: isPaid ? '#16a34a' : '#6b7280' }}>
