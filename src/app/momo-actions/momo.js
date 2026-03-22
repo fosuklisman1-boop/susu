@@ -44,7 +44,7 @@ export async function createMomoPayment({ amount, phoneNumber, userId, planId = 
       // 4. Log to DB (pending status)
       if (groupId) {
         // Handle Group Contribution
-        await supabase.from('group_contributions').insert({
+        const { error: insertErr } = await supabase.from('group_contributions').insert({
           user_id: userId,
           group_id: groupId,
           amount,
@@ -52,9 +52,10 @@ export async function createMomoPayment({ amount, phoneNumber, userId, planId = 
           provider: 'momo',
           provider_reference: referenceId,
           contributor_name: metadata.contributorName || 'Member',
-          is_anonymous: metadata.isAnonymous || false
+          contributor_email: metadata.contributorEmail || null
         });
-      } else {
+        
+        if (insertErr) console.error("❌ [MoMo Sync] DB Insert Error for Group Contribution:", insertErr);
         // Handle Standard Plan Contribution
         await supabase.from('contributions').insert({
           user_id: userId,
