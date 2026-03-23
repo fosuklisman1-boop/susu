@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { ArrowUp, ArrowDown, Save, User as UserIcon, Lock } from 'lucide-react'
-import { updateMemberPayoutOrder } from '../actions'
+import { updateMemberPayoutOrder } from '../../actions'
 import { useRouter } from 'next/navigation'
 
 export default function PayoutOrderManager({ groupId, initialMembers, currentCycle }) {
