@@ -359,16 +359,46 @@ export async function recordGroupPayout(groupId, userId, amount, cycleNumber) {
     if (walletError) console.error('Wallet update error:', walletError)
   }
 
-  // 4. Record in Ledger
+  // 4. Record in Group Ledger (Withdrawal)
   await adminSupabase.from('transactions').insert({
     user_id: userId,
     group_id: groupId,
     type: 'withdrawal', 
     amount: amount,
     status: 'completed',
-    reference: `PAYOUT-${groupId}-${cycleNumber}-${Date.now()}`,
+    reference: `PAYOUT-OUT-${groupId}-${cycleNumber}-${Date.now()}`,
     source_table: 'payouts',
-    metadata: { cycle_number: cycleNumber, note: 'Automatic rotating group payout' }
+    metadata: { cycle_number: cycleNumber, note: 'Rotating group payout - deduction from group pot' }
+  })
+
+  // 5. Add to Recipient's Personal Wallet
+  const { data: userWallet } = await adminSupabase
+    .from('wallets')
+    .select('balance')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (userWallet) {
+    await adminSupabase.from('wallets').update({
+        balance: Number(userWallet.balance) + Number(amount),
+        updated_at: new Date().toISOString()
+    }).eq('user_id', userId)
+  } else {
+    await adminSupabase.from('wallets').insert({
+        user_id: userId,
+        balance: amount
+    })
+  }
+
+  // 6. Record in User Ledger (Deposit)
+  await adminSupabase.from('transactions').insert({
+    user_id: userId,
+    type: 'plan_deposit', 
+    amount: amount,
+    status: 'completed',
+    reference: `PAYOUT-IN-${groupId}-${cycleNumber}-${Date.now()}`,
+    source_table: 'payouts',
+    metadata: { cycle_number: cycleNumber, note: `Received payout from group: ${groupId}` }
   })
   
   revalidatePath(`/dashboard/group-savings/${groupId}`)
