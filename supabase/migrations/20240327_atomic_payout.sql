@@ -2,6 +2,10 @@
 -- This function ensures that recording a payout, incrementing the cycle, 
 -- updating wallets, and ledgering transactions happen as a single atomic unit.
 
+-- 0. Ensure current_cycle column exists (was missing in target DB)
+ALTER TABLE public.savings_groups ADD COLUMN IF NOT EXISTS current_cycle INTEGER DEFAULT 1;
+UPDATE public.savings_groups SET current_cycle = 1 WHERE group_type = 'rotating' AND current_cycle IS NULL;
+
 CREATE OR REPLACE FUNCTION public.process_group_payout(
     p_group_id UUID,
     p_user_id UUID,

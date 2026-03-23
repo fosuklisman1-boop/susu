@@ -2,6 +2,10 @@
 -- Run this in your Supabase SQL editor to sync groups that were 
 -- stuck after a payout record was created but before the cycle was advanced.
 
+-- 0. Ensure current_cycle column exists (was missing in target DB)
+ALTER TABLE public.savings_groups ADD COLUMN IF NOT EXISTS current_cycle INTEGER DEFAULT 1;
+UPDATE public.savings_groups SET current_cycle = 1 WHERE group_type = 'rotating' AND current_cycle IS NULL;
+
 DO $$
 DECLARE
     r RECORD;
@@ -70,5 +74,5 @@ BEGIN
             jsonb_build_object('cycle', r.cycle_number, 'type', 'manual_repair_payout_deposit')
         );
 
-    END FOR;
+    END LOOP;
 END $$;
