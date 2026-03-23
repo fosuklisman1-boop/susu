@@ -308,8 +308,10 @@ export async function recordGroupPayout(groupId, userId, amount, cycleNumber) {
     
   if (member?.role !== 'admin') return { error: 'Only admins can record payouts.' }
   
+  const adminSupabase = await createServiceRoleClient()
+  
   // 1. Insert Payout Record
-  const { error: payoutError } = await supabase
+  const { error: payoutError } = await adminSupabase
     .from('payouts')
     .insert({
       group_id: groupId,
@@ -319,10 +321,13 @@ export async function recordGroupPayout(groupId, userId, amount, cycleNumber) {
       status: 'completed'
     })
     
-  if (payoutError) return { error: 'Failed to record payout.' }
+  if (payoutError) {
+    console.error('Payout insert error:', payoutError)
+    return { error: 'Failed to record payout record.' }
+  }
   
   // 2. Increment Cycle in Group
-  const { error: groupError } = await supabase
+  const { error: groupError } = await adminSupabase
     .from('savings_groups')
     .update({ 
       current_cycle: (cycleNumber || 1) + 1,
@@ -330,7 +335,41 @@ export async function recordGroupPayout(groupId, userId, amount, cycleNumber) {
     })
     .eq('id', groupId)
     
-  if (groupError) return { error: 'Payout recorded but failed to increment cycle.' }
+  if (groupError) {
+    console.error('Group cycle update error:', groupError)
+    return { error: 'Payout record created but failed to increment cycle.' }
+  }
+
+  // 3. Deduct from Group Wallet
+  const { data: currentWallet } = await adminSupabase
+    .from('wallets')
+    .select('balance')
+    .eq('group_id', groupId)
+    .maybeSingle()
+
+  if (currentWallet) {
+    const { error: walletError } = await adminSupabase
+      .from('wallets')
+      .update({ 
+        balance: Number(currentWallet.balance) - Number(amount),
+        updated_at: new Date().toISOString()
+      })
+      .eq('group_id', groupId)
+    
+    if (walletError) console.error('Wallet update error:', walletError)
+  }
+
+  // 4. Record in Ledger
+  await adminSupabase.from('transactions').insert({
+    user_id: userId,
+    group_id: groupId,
+    type: 'withdrawal', 
+    amount: amount,
+    status: 'completed',
+    reference: `PAYOUT-${groupId}-${cycleNumber}-${Date.now()}`,
+    source_table: 'payouts',
+    metadata: { cycle_number: cycleNumber, note: 'Automatic rotating group payout' }
+  })
   
   revalidatePath(`/dashboard/group-savings/${groupId}`)
   return { success: true }
