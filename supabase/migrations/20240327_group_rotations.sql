@@ -4,8 +4,8 @@
 ALTER TABLE public.savings_groups 
 ADD COLUMN IF NOT EXISTS rotation_index INTEGER DEFAULT 1;
 
--- 2. Add rotation_number to contributions (tracks which round this payment belongs to)
-ALTER TABLE public.contributions 
+-- 2. Add rotation_number to group_contributions (tracks which round this payment belongs to)
+ALTER TABLE public.group_contributions 
 ADD COLUMN IF NOT EXISTS rotation_number INTEGER DEFAULT 1;
 
 -- 3. Add rotation_number to payouts (tracks which round this payout belongs to)
@@ -13,7 +13,7 @@ ALTER TABLE public.payouts
 ADD COLUMN IF NOT EXISTS rotation_number INTEGER DEFAULT 1;
 
 -- 4. Create an index for performance
-CREATE INDEX IF NOT EXISTS idx_contributions_rotation ON public.contributions(group_id, rotation_number);
+CREATE INDEX IF NOT EXISTS idx_group_contributions_rotation ON public.group_contributions(group_id, rotation_number);
 CREATE INDEX IF NOT EXISTS idx_payouts_rotation ON public.payouts(group_id, rotation_number);
 
 -- 5. Update the atomic payout function to be "Round-Aware"
@@ -58,7 +58,7 @@ BEGIN
     FROM public.group_members gm
     WHERE gm.group_id = p_group_id
     AND EXISTS (
-        SELECT 1 FROM public.contributions c
+        SELECT 1 FROM public.group_contributions c
         WHERE c.group_id = p_group_id
         AND c.user_id = gm.user_id
         AND c.cycle_number = v_current_cycle
