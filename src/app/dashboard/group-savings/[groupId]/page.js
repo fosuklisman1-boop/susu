@@ -559,11 +559,8 @@ export default async function GroupDetailPage({ params }) {
                           {(() => {
                             if (!group.start_date) return 'TBD'
                             const d = new Date(group.start_date)
-                          const offset = i
-                          
-                          const d = new Date(group.start_date)
-                          const offset = i
-                          d.setDate(d.getDate() + offset * freqDays)
+                            const offset = i
+                            d.setDate(d.getDate() + offset * freqDays)
                           
                           // Phase 36: Apply delay to current and future cycles
                           if (cycleNum >= currentCycle) {
