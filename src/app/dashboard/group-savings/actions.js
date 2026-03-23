@@ -310,96 +310,25 @@ export async function recordGroupPayout(groupId, userId, amount, cycleNumber) {
   
   const adminSupabase = await createServiceRoleClient()
   
-  // 1. Insert Payout Record
-  const { error: payoutError } = await adminSupabase
-    .from('payouts')
-    .insert({
-      group_id: groupId,
-      user_id: userId,
-      amount,
-      cycle_number: cycleNumber,
-      status: 'completed'
-    })
-    
-  if (payoutError) {
-    console.error('Payout insert error:', payoutError)
-    return { error: 'Failed to record payout record.' }
-  }
-  
-  // 2. Increment Cycle in Group
-  const { error: groupError } = await adminSupabase
-    .from('savings_groups')
-    .update({ 
-      current_cycle: (cycleNumber || 1) + 1,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', groupId)
-    
-  if (groupError) {
-    console.error('Group cycle update error:', groupError)
-    return { error: 'Payout record created but failed to increment cycle.' }
-  }
-
-  // 3. Deduct from Group Wallet
-  const { data: currentWallet } = await adminSupabase
-    .from('wallets')
-    .select('balance')
-    .eq('group_id', groupId)
-    .maybeSingle()
-
-  if (currentWallet) {
-    const { error: walletError } = await adminSupabase
-      .from('wallets')
-      .update({ 
-        balance: Number(currentWallet.balance) - Number(amount),
-        updated_at: new Date().toISOString()
-      })
-      .eq('group_id', groupId)
-    
-    if (walletError) console.error('Wallet update error:', walletError)
-  }
-
-  // 4. Record in Group Ledger (Withdrawal)
-  await adminSupabase.from('transactions').insert({
-    user_id: userId,
-    group_id: groupId,
-    type: 'withdrawal', 
-    amount: amount,
-    status: 'completed',
-    reference: `PAYOUT-OUT-${groupId}-${cycleNumber}-${Date.now()}`,
-    source_table: 'payouts',
-    metadata: { cycle_number: cycleNumber, note: 'Rotating group payout - deduction from group pot' }
+  // 1. Execute Atomic Payout RPC
+  // This handles Payout Insert, Cycle Increment, Wallet deduction (Group), 
+  // Wallet credit (User), and Ledger entries in ONE transaction.
+  const { data: rpcResult, error: rpcError } = await adminSupabase.rpc('process_group_payout', {
+    p_group_id: groupId,
+    p_user_id: userId,
+    p_amount: Number(amount),
+    p_cycle_number: Number(cycleNumber || 1)
   })
 
-  // 5. Add to Recipient's Personal Wallet
-  const { data: userWallet } = await adminSupabase
-    .from('wallets')
-    .select('balance')
-    .eq('user_id', userId)
-    .maybeSingle()
-
-  if (userWallet) {
-    await adminSupabase.from('wallets').update({
-        balance: Number(userWallet.balance) + Number(amount),
-        updated_at: new Date().toISOString()
-    }).eq('user_id', userId)
-  } else {
-    await adminSupabase.from('wallets').insert({
-        user_id: userId,
-        balance: amount
-    })
+  if (rpcError) {
+    console.error('Payout RPC Error:', rpcError)
+    return { error: `Database error during payout: ${rpcError.message}` }
   }
 
-  // 6. Record in User Ledger (Deposit)
-  await adminSupabase.from('transactions').insert({
-    user_id: userId,
-    type: 'plan_deposit', 
-    amount: amount,
-    status: 'completed',
-    reference: `PAYOUT-IN-${groupId}-${cycleNumber}-${Date.now()}`,
-    source_table: 'payouts',
-    metadata: { cycle_number: cycleNumber, note: `Received payout from group: ${groupId}` }
-  })
+  if (rpcResult && !rpcResult.success) {
+    console.error('Payout logic error:', rpcResult.error)
+    return { error: `Payout failed: ${rpcResult.error}` }
+  }
   
   revalidatePath(`/dashboard/group-savings/${groupId}`)
   return { success: true }
