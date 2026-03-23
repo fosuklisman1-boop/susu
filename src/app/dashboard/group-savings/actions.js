@@ -463,13 +463,22 @@ export async function restartGroupRotation(groupId) {
   }
 
   // Perform Restart
+  let freqDays = 7
+  if (group.frequency === 'daily') freqDays = 1
+  if (group.frequency === 'weekly') freqDays = 7
+  if (group.frequency === 'bi-weekly') freqDays = 14
+  if (group.frequency === 'monthly') freqDays = 30
+
+  const nextStartDate = new Date()
+  nextStartDate.setDate(nextStartDate.getDate() + freqDays)
+
   const { error } = await adminSupabase
     .from('savings_groups')
     .update({ 
       status: 'active',
       current_cycle: 1,
       rotation_index: (group.rotation_index || 1) + 1,
-      start_date: new Date().toISOString() // Reset start date to today for the new round
+      start_date: nextStartDate.toISOString() 
     })
     .eq('id', groupId)
 
