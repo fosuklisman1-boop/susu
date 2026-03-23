@@ -15,6 +15,8 @@ export default function GroupCompletionCeremony({ groupId, isAdmin, rotationInde
     if (result.error) {
       alert(result.error)
       setIsRestarting(false)
+    } else {
+      window.location.reload()
     }
   }
 

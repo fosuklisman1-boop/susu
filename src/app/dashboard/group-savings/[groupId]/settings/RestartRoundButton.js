@@ -16,6 +16,8 @@ export default function RestartRoundButton({ groupId, rotationIndex }) {
     if (result.error) {
       alert(result.error)
       setIsRestarting(false)
+    } else {
+      window.location.reload()
     }
   }
 
