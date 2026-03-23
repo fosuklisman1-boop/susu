@@ -284,16 +284,28 @@ export default async function GroupDetailPage({ params }) {
                 <p style={{ fontSize: '1rem', fontWeight: '700' }}>
                   {(() => {
                     if (!group.start_date || !myPosition) return 'Not set yet'
-                    const d = new Date(group.start_date)
-                    const offset = (myPosition - 1)
-                    d.setDate(d.getDate() + offset * freqDays)
+                    const org = new Date(group.start_date)
+                    org.setDate(org.getDate() + (myPosition - 1) * freqDays)
                     
-                    // Add delay if we are at or past this cycle and it's stalled
+                    const est = new Date(org)
                     if (myPosition >= currentCycle) {
-                      d.setDate(d.getDate() + delayDays)
+                      est.setDate(est.getDate() + delayDays)
                     }
 
-                    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                    if (delayDays > 0 && myPosition >= currentCycle) {
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '0.7rem', opacity: 0.5, textDecoration: 'line-through' }}>
+                            {org.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                          </span>
+                          <span style={{ color: '#fbbf24' }}>
+                            {myPosition === currentCycle ? 'Today (Delayed)' : est.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </span>
+                        </div>
+                      )
+                    }
+
+                    return org.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                   })()}
                 </p>
               </div>
@@ -558,16 +570,35 @@ export default async function GroupDetailPage({ params }) {
                         <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                           {(() => {
                             if (!group.start_date) return 'TBD'
-                            const d = new Date(group.start_date)
+                            
+                            const originalDate = new Date(group.start_date)
                             const offset = i
-                            d.setDate(d.getDate() + offset * freqDays)
-                          
-                          // Phase 36: Apply delay to current and future cycles
-                          if (cycleNum >= currentCycle) {
-                            d.setDate(d.getDate() + delayDays)
-                          }
+                            originalDate.setDate(originalDate.getDate() + offset * freqDays)
+                            
+                            const estimatedDate = new Date(originalDate)
+                            if (cycleNum >= currentCycle) {
+                              estimatedDate.setDate(estimatedDate.getDate() + delayDays)
+                            }
 
-                            return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+                            const isDelayed = delayDays > 0 && cycleNum >= currentCycle
+
+                            return (
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ 
+                                  fontSize: '0.8rem', 
+                                  fontWeight: isDelayed ? '500' : '700',
+                                  textDecoration: isDelayed ? 'line-through' : 'none',
+                                  opacity: isDelayed ? 0.5 : 1
+                                }}>
+                                  {originalDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                                </span>
+                                {isDelayed && (
+                                  <span style={{ fontSize: '0.65rem', color: '#dc2626', fontWeight: '800' }}>
+                                    {cycleNum === currentCycle ? 'EST. TODAY' : `EST. ${estimatedDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}`}
+                                  </span>
+                                )}
+                              </div>
+                            )
                           })()}
                         </p>
                       </div>
