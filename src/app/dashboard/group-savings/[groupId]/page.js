@@ -499,7 +499,7 @@ export default async function GroupDetailPage({ params }) {
                 // Phase 48: Check if overdue
                 const today = new Date()
                 const dueDate = new Date(group.start_date)
-                dueDate.setDate(dueDate.getDate() + (currentCycle - 1) * freqDays)
+                dueDate.setDate(dueDate.getDate() + currentCycle * freqDays)
                 const isOverdue = !isPaid && today > dueDate
 
                 return (
