@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Settings, UserMinus, XCircle, Landmark, Users, Trophy } from 'lucide-react'
+import { ArrowLeft, Settings, UserMinus, XCircle, Landmark, Users, Trophy, CheckCircle2 } from 'lucide-react'
 import PaystackButton from '@/components/PaystackButton'
 import GroupContributionForm from './GroupContributionForm'
 import GroupWithdrawalForm from './GroupWithdrawalForm'
@@ -28,7 +28,7 @@ export default async function GroupDetailPage({ params }) {
   // Fetch members with their roles
   const { data: members } = await supabase
     .from('group_members')
-    .select('user_id, role, created_at, payout_order, profiles(full_name)')
+    .select('user_id, role, created_at, payout_order, profiles(full_name, email)')
     .eq('group_id', groupId)
 
   // Determine current user's role
@@ -246,7 +246,7 @@ export default async function GroupDetailPage({ params }) {
               <div>
                 <p style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '4px' }}>Expected Payout</p>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#fbbf24' }}>
-                  GHS {(Number(group.max_members || members.length) * Number(group.contribution_amount)).toLocaleString()}
+                  GHS {(Number(group.max_members || (members?.length || 1)) * Number(group.contribution_amount)).toLocaleString()}
                 </h2>
               </div>
               <div>
@@ -284,7 +284,7 @@ export default async function GroupDetailPage({ params }) {
               <div>
                 <p style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '4px' }}>Cycle Goal</p>
                 <p style={{ fontSize: '1rem', fontWeight: '700' }}>
-                  {group.max_members || members.length} Member(s)
+                  {(group.max_members || (members?.length || 0))} Member(s)
                 </p>
               </div>
             </div>
@@ -570,13 +570,13 @@ export default async function GroupDetailPage({ params }) {
                           </div>
                         ) : !everyonePaidThisCycle ? (
                           <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', color: '#0369a1', padding: '8px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <Loader2 size={12} className="animate-spin" /> In Progress
+                            <span className="animate-spin" style={{ display: 'inline-block' }}>⏳</span> In Progress
                           </div>
                         ) : (
                           <PayoutAction 
                             groupId={groupId}
                             recipientId={m.user_id}
-                            amount={Number(group.contribution_amount) * (group.max_members || members?.length || 1)}
+                            amount={Number(group.contribution_amount) * (group.max_members || (members?.length || 1))}
                             currentCycle={currentCycle}
                             isAdmin={isAdmin}
                           />

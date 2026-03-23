@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Heart, Users, Share2, Check } from 'lucide-react'
+import { Heart, Users, Share2, Check, XCircle } from 'lucide-react'
 import UnifiedPaymentModal from '@/components/UnifiedPaymentModal'
 
 export default function ContributeClient({ 

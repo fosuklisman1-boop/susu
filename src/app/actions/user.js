@@ -44,7 +44,7 @@ export async function getUserWallet() {
     .from('wallets')
     .select('balance')
     .eq('user_id', user.id)
-    .single()
+    .maybeSingle()
     
   if (error) {
     console.error('Error fetching user wallet:', error)
