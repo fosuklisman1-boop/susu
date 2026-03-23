@@ -134,14 +134,26 @@ export default async function GroupDetailPage({ params }) {
   // Lifecycle Status
   const isClosed = group.status === 'closed'
   const isExpired = (() => {
+    // 1. Explicit end date check (standard for all types)
     if (group.end_date && new Date() > new Date(group.end_date)) return true
-    if (group.start_date && group.frequency && !isNaN(Number(group.frequency))) {
+    
+    // 2. Frequency-based duration (ONLY for non-rotating types)
+    // Rotating groups should not expire purely based on frequency, as they last for multiple cycles.
+    if (group.group_type !== 'rotating' && group.start_date && group.frequency && !isNaN(Number(group.frequency))) {
       const start = new Date(group.start_date)
       const durationDays = Number(group.frequency)
       const end = new Date(start)
       end.setDate(end.getDate() + durationDays)
       return new Date() > end
     }
+    
+    // 3. Rotating groups end after all cycles are paid
+    if (group.group_type === 'rotating') {
+      const totalSlots = Math.max(group.max_members || 0, sortedMembers?.length || 0)
+      const allDone = payouts?.length >= totalSlots && payouts?.every(p => p.status === 'completed')
+      if (allDone) return true
+    }
+
     return false
   })()
   const isLockedUntilFull = !!group.max_members && (members?.length || 0) < group.max_members
@@ -481,17 +493,23 @@ export default async function GroupDetailPage({ params }) {
                 )
                 const isMe = m.user_id === user.id
                 
+                // Phase 48: Check if overdue
+                const today = new Date()
+                const dueDate = new Date(group.start_date)
+                dueDate.setDate(dueDate.getDate() + (currentCycle - 1) * freqDays)
+                const isOverdue = !isPaid && today > dueDate
+
                 return (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: isPaid ? '#f0fdf4' : '#f9fafb', borderRadius: '12px', border: `1px solid ${isPaid ? '#bcf0da' : '#f3f4f6'}` }}>
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: isPaid ? '#f0fdf4' : (isOverdue ? '#fff1f2' : '#f9fafb'), borderRadius: '12px', border: `1px solid ${isPaid ? '#bcf0da' : (isOverdue ? '#fecaca' : '#f3f4f6')}` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ 
                         width: '32px', height: '32px', borderRadius: '50%', 
-                        background: isPaid ? '#16a34a' : '#9ca3af', 
+                        background: isPaid ? '#16a34a' : (isOverdue ? '#dc2626' : '#9ca3af'), 
                         color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.8rem' 
                       }}>
                         {m.profiles?.full_name?.charAt(0) || '?'}
                       </div>
-                      <p style={{ fontSize: '0.85rem', fontWeight: isMe ? '700' : '600', color: isPaid ? '#065f46' : '#374151' }}>
+                      <p style={{ fontSize: '0.85rem', fontWeight: isMe ? '700' : '600', color: isPaid ? '#065f46' : (isOverdue ? '#991b1b' : '#374151') }}>
                         {isMe ? 'You' : (m.profiles?.full_name || `Member ${i + 1}`)}
                       </p>
                     </div>
@@ -500,8 +518,8 @@ export default async function GroupDetailPage({ params }) {
                         PAID
                       </span>
                     ) : (
-                      <span style={{ fontSize: '0.65rem', fontWeight: '800', color: '#6b7280', background: '#f3f4f6', padding: '4px 8px', borderRadius: '20px', textTransform: 'uppercase' }}>
-                        PENDING
+                      <span style={{ fontSize: '0.65rem', fontWeight: '800', color: isOverdue ? '#dc2626' : '#6b7280', background: isOverdue ? '#fee2e2' : '#f3f4f6', padding: '4px 8px', borderRadius: '20px', textTransform: 'uppercase' }}>
+                        {isOverdue ? 'LATE / OVERDUE' : 'PENDING'}
                       </span>
                     )}
                   </div>
@@ -586,8 +604,14 @@ export default async function GroupDetailPage({ params }) {
                             Waiting for {group.max_members - (members?.length || 0)} more members...
                           </div>
                         ) : !everyonePaidThisCycle ? (
-                          <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', color: '#0369a1', padding: '8px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span className="animate-spin" style={{ display: 'inline-block' }}>⏳</span> In Progress
+                          <div style={{ 
+                            background: delayDays > 0 ? '#fff1f2' : '#f0f9ff', 
+                            border: `1px solid ${delayDays > 0 ? '#fecaca' : '#bae6fd'}`, 
+                            color: delayDays > 0 ? '#991b1b' : '#0369a1', 
+                            padding: '8px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' 
+                          }}>
+                            {delayDays > 0 ? <XCircle size={14} /> : <span className="animate-spin" style={{ display: 'inline-block' }}>⏳</span>}
+                            {delayDays > 0 ? `Overdue (${delayDays}d)` : 'In Progress'}
                           </div>
                         ) : !isPayoutDue ? (
                           <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '8px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
