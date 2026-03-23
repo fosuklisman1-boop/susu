@@ -195,8 +195,8 @@ export default async function GroupDetailPage({ params }) {
     
     const today = new Date()
     if (today > dueDate) {
-      const diffTime = Math.abs(today - dueDate)
-      return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      const diffTime = today - dueDate
+      return Math.floor(diffTime / (1000 * 60 * 60 * 24))
     }
     return 0
   })()
