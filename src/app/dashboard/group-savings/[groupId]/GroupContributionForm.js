@@ -10,7 +10,8 @@ export default function GroupContributionForm({
   userId,
   isFixed = true, 
   fixedAmount = 0, 
-  minAmount = 0 
+  minAmount = 0,
+  cycleNumber = null
 }) {
   const [isOpen, setIsOpen] = useState(false)
   
@@ -77,7 +78,8 @@ export default function GroupContributionForm({
         metadata={{ 
           type: 'group_contribution', 
           contributor_name: userEmail,
-          memo: `Contribution for Group ${groupId}` 
+          memo: `Contribution for Group ${groupId}`,
+          cycle_number: cycleNumber
         }}
       />
     </div>

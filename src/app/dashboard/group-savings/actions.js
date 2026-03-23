@@ -342,7 +342,8 @@ export async function recordPendingContribution({ amount, reference, planId = nu
       provider: metadata.provider || 'paystack',
       reference: reference,
       contributor_name: metadata.contributor_name || metadata.contributorName || (user?.email ? user.email : 'Anonymous'),
-      contributor_email: metadata.contributor_email || (user?.email ? user.email : null)
+      contributor_email: metadata.contributor_email || (user?.email ? user.email : null),
+      cycle_number: metadata.cycle_number || null
     })
     if (error) {
       console.error('❌ [Pending] Group Contribution log failed:', error)

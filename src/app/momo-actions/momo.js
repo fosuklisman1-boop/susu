@@ -52,7 +52,8 @@ export async function createMomoPayment({ amount, phoneNumber, userId, planId = 
           provider: 'momo',
           reference: referenceId,
           contributor_name: metadata.contributor_name || metadata.contributorName || 'Member',
-          contributor_email: metadata.contributor_email || metadata.contributorEmail || null
+          contributor_email: metadata.contributor_email || metadata.contributorEmail || null,
+          cycle_number: metadata.cycle_number || null
         });
         
         if (insertErr) console.error("❌ [MoMo Sync] DB Insert Error for Group Contribution:", insertErr);

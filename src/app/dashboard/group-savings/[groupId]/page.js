@@ -48,7 +48,7 @@ export default async function GroupDetailPage({ params }) {
   // Fetch successful contributions for history and totals
   const { data: contributions, error: gcError } = await supabase
     .from('group_contributions')
-    .select('id, amount, status, contributor_name, contributor_email, created_at, user_id, group_id, profiles(full_name)')
+    .select('id, amount, status, contributor_name, contributor_email, created_at, user_id, group_id, cycle_number, profiles(full_name)')
     .eq('group_id', groupId)
     .eq('status', 'success')
     .order('created_at', { ascending: false })
@@ -410,6 +410,55 @@ export default async function GroupDetailPage({ params }) {
           </div>
         )}
 
+        {/* ── ROTATING CYCLE CONTRIBUTION TRACKER ────────────────────────── */}
+        {group.group_type === 'rotating' && (
+          <div style={{ background: 'white', borderRadius: '16px', padding: '20px', marginBottom: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.03)' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Users size={18} /> Cycle {currentCycle} Contribution Status
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {sortedMembers?.map((m, i) => {
+                const isPaid = contributions?.some(c => 
+                  c.cycle_number === currentCycle && 
+                  (c.user_id === m.user_id || (m.profiles?.email && c.contributor_email === m.profiles.email))
+                )
+                const isMe = m.user_id === user.id
+                
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: isPaid ? '#f0fdf4' : '#f9fafb', borderRadius: '12px', border: `1px solid ${isPaid ? '#bcf0da' : '#f3f4f6'}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ 
+                        width: '32px', height: '32px', borderRadius: '50%', 
+                        background: isPaid ? '#16a34a' : '#9ca3af', 
+                        color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '0.8rem' 
+                      }}>
+                        {m.profiles?.full_name?.charAt(0) || '?'}
+                      </div>
+                      <p style={{ fontSize: '0.85rem', fontWeight: isMe ? '700' : '600', color: isPaid ? '#065f46' : '#374151' }}>
+                        {isMe ? 'You' : (m.profiles?.full_name || `Member ${i + 1}`)}
+                      </p>
+                    </div>
+                    {isPaid ? (
+                      <span style={{ fontSize: '0.65rem', fontWeight: '800', color: '#16a34a', background: '#dcfce7', padding: '4px 8px', borderRadius: '20px', textTransform: 'uppercase' }}>
+                        PAID
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '0.65rem', fontWeight: '800', color: '#6b7280', background: '#f3f4f6', padding: '4px 8px', borderRadius: '20px', textTransform: 'uppercase' }}>
+                        PENDING
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            {!isLockedUntilFull && !isRecipientPaid && (
+              <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '16px', textAlign: 'center', fontStyle: 'italic' }}>
+                All members must contribute GHS {Number(group.contribution_amount).toLocaleString()} to complete this cycle.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* ── ROTATING PAYOUT SCHEDULE ──────────────────────────────── */}
         {group.group_type === 'rotating' && (
           <div style={{ background: 'white', borderRadius: '16px', padding: '20px', marginBottom: '16px', boxShadow: '0 4px 10px rgba(0,0,0,0.03)' }}>
@@ -602,6 +651,7 @@ export default async function GroupDetailPage({ params }) {
             isFixed={group.is_fixed_contribution ?? true}
             fixedAmount={group.contribution_amount}
             minAmount={group.min_contribution_amount}
+            cycleNumber={currentCycle}
           />
         ) : (
           <div style={{ 
