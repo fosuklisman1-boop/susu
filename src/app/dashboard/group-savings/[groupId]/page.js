@@ -165,7 +165,7 @@ export default async function GroupDetailPage({ params }) {
     else if (group.frequency === 'monthly') freqDays = 30
 
     const d = new Date(group.start_date)
-    d.setDate(d.getDate() + currentCycle * freqDays)
+    d.setDate(d.getDate() + (currentCycle - 1) * freqDays)
     return d
   })()
 
