@@ -110,7 +110,18 @@ export default async function GroupDetailPage({ params }) {
   // Sort by highest contribution first
   const sortedContributors = Object.values(contributorStats).sort((a, b) => b.total - a.total)
 
-  // 2. Payout Schedule for Rotating groups
+  // 0. Unified Frequency Calculation
+  const freqDays = (() => {
+    if (!group.frequency) return 7
+    const num = Number(group.frequency)
+    if (!isNaN(num)) return num
+    if (group.frequency === 'weekly') return 7
+    if (group.frequency === 'biweekly') return 14
+    if (group.frequency === 'monthly') return 30
+    return 7
+  })()
+
+  // 1. Payout Schedule for Rotating groups
   const { data: payouts } = await supabase
     .from('payouts')
     .select('*')
@@ -139,11 +150,10 @@ export default async function GroupDetailPage({ params }) {
     
     // 2. Frequency-based duration (ONLY for non-rotating types)
     // Rotating groups should not expire purely based on frequency, as they last for multiple cycles.
-    if (group.group_type !== 'rotating' && group.start_date && group.frequency && !isNaN(Number(group.frequency))) {
+    if (group.group_type !== 'rotating' && group.start_date && group.frequency) {
       const start = new Date(group.start_date)
-      const durationDays = Number(group.frequency)
       const end = new Date(start)
-      end.setDate(end.getDate() + durationDays)
+      end.setDate(end.getDate() + freqDays)
       return new Date() > end
     }
     
@@ -169,13 +179,6 @@ export default async function GroupDetailPage({ params }) {
   // Phase 45: Calculate scheduled payout date for the current cycle
   const scheduledPayoutDate = (() => {
     if (!group.start_date || group.group_type !== 'rotating') return null
-    
-    let freqDays = 7
-    if (!isNaN(Number(group.frequency))) freqDays = Number(group.frequency)
-    else if (group.frequency === 'weekly') freqDays = 7
-    else if (group.frequency === 'biweekly') freqDays = 14
-    else if (group.frequency === 'monthly') freqDays = 30
-
     const d = new Date(group.start_date)
     d.setDate(d.getDate() + (currentCycle - 1) * freqDays)
     return d
@@ -187,12 +190,6 @@ export default async function GroupDetailPage({ params }) {
   const delayDays = (() => {
     if (!group.start_date || group.group_type !== 'rotating' || everyonePaidThisCycle) return 0
     
-    let freqDays = 7
-    if (!isNaN(Number(group.frequency))) freqDays = Number(group.frequency)
-    else if (group.frequency === 'weekly') freqDays = 7
-    else if (group.frequency === 'biweekly') freqDays = 14
-    else if (group.frequency === 'monthly') freqDays = 30
-
     const dueDate = new Date(group.start_date)
     dueDate.setDate(dueDate.getDate() + (currentCycle - 1) * freqDays)
     
@@ -289,16 +286,6 @@ export default async function GroupDetailPage({ params }) {
                     if (!group.start_date || !myPosition) return 'Not set yet'
                     const d = new Date(group.start_date)
                     const offset = (myPosition - 1)
-                    
-                    let freqDays = 7
-                    if (!isNaN(Number(group.frequency))) {
-                      freqDays = Number(group.frequency)
-                    } else {
-                      if (group.frequency === 'weekly') freqDays = 7
-                      else if (group.frequency === 'biweekly') freqDays = 14
-                      else if (group.frequency === 'monthly') freqDays = 30
-                    }
-
                     d.setDate(d.getDate() + offset * freqDays)
                     
                     // Add delay if we are at or past this cycle and it's stalled
@@ -574,15 +561,8 @@ export default async function GroupDetailPage({ params }) {
                             const d = new Date(group.start_date)
                           const offset = i
                           
-                          let freqDays = 7
-                          if (!isNaN(Number(group.frequency))) {
-                            freqDays = Number(group.frequency)
-                          } else {
-                            if (group.frequency === 'weekly') freqDays = 7
-                            else if (group.frequency === 'biweekly') freqDays = 14
-                            else if (group.frequency === 'monthly') freqDays = 30
-                          }
-
+                          const d = new Date(group.start_date)
+                          const offset = i
                           d.setDate(d.getDate() + offset * freqDays)
                           
                           // Phase 36: Apply delay to current and future cycles
