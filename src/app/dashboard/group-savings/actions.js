@@ -310,6 +310,101 @@ export async function updateGroup(prevState, formData) {
   return { success: true }
 }
 
+export async function removeMember(groupId, targetUserId) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  // 1. Verify Caller is Admin
+  const { data: callerMember } = await supabase
+    .from('group_members')
+    .select('role')
+    .eq('group_id', groupId)
+    .eq('user_id', user.id)
+    .single()
+  
+  if (callerMember?.role !== 'admin') return { error: 'Only admins can remove members.' }
+  if (user.id === targetUserId) return { error: 'You cannot remove yourself.' }
+
+  // 2. Check Activity (Contributions)
+  const { count: contributionCount } = await supabase
+    .from('group_contributions')
+    .select('*', { count: 'exact', head: true })
+    .eq('group_id', groupId)
+    .eq('user_id', targetUserId)
+    .eq('status', 'success')
+  
+  if (contributionCount > 0) return { error: 'Member has already made contributions and cannot be removed.' }
+
+  // 3. Check Activity (Payouts)
+  const { count: payoutCount } = await supabase
+    .from('payouts')
+    .select('*', { count: 'exact', head: true })
+    .eq('group_id', groupId)
+    .eq('user_id', targetUserId)
+  
+  if (payoutCount > 0) return { error: 'Member has already received a payout and cannot be removed.' }
+
+  // 4. Perform Removal
+  const adminSupabase = await createServiceRoleClient()
+
+  // Get target's order if rotating
+  const { data: targetMember } = await supabase
+    .from('group_members')
+    .select('payout_order')
+    .eq('group_id', groupId)
+    .eq('user_id', targetUserId)
+    .single()
+
+  const { error: deleteError } = await adminSupabase
+    .from('group_members')
+    .delete()
+    .eq('group_id', groupId)
+    .eq('user_id', targetUserId)
+
+  if (deleteError) return { error: `Failed to remove member: ${deleteError.message}` }
+
+  // 5. Shift Orders and Decrement max_members if Rotating
+  const { data: group } = await supabase
+    .from('savings_groups')
+    .select('group_type, max_members')
+    .eq('id', groupId)
+    .single()
+
+  if (group?.group_type === 'rotating') {
+    // Shifting orders manually since RPC might not be available
+    if (targetMember?.payout_order) {
+      const { data: membersToShift } = await adminSupabase
+        .from('group_members')
+        .select('user_id, payout_order')
+        .eq('group_id', groupId)
+        .gt('payout_order', targetMember.payout_order)
+      
+      if (membersToShift && membersToShift.length > 0) {
+        for (const m of membersToShift) {
+          await adminSupabase
+            .from('group_members')
+            .update({ payout_order: m.payout_order - 1 })
+            .eq('group_id', groupId)
+            .eq('user_id', m.user_id)
+        }
+      }
+    }
+    
+    // Decrement max_members if it was set
+    if (group.max_members) {
+      await adminSupabase
+        .from('savings_groups')
+        .update({ max_members: group.max_members - 1 })
+        .eq('id', groupId)
+    }
+  }
+
+  revalidatePath(`/dashboard/group-savings/${groupId}`)
+  revalidatePath('/dashboard/group-savings')
+  return { success: true }
+}
+
 export async function recordGroupPayout(groupId, userId, amount, cycleNumber) {
   const supabase = await createClient()
   

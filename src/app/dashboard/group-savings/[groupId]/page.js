@@ -6,8 +6,9 @@ import PaystackButton from '@/components/PaystackButton'
 import GroupContributionForm from './GroupContributionForm'
 import GroupWithdrawalForm from './GroupWithdrawalForm'
 import PayoutAction from './PayoutAction'
-import { restartGroupRotation } from '../actions'
+import { restartGroupRotation, removeMember } from '../actions'
 import GroupCompletionCeremony from './GroupCompletionCeremony'
+import RemoveMemberButton from './RemoveMemberButton'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -687,10 +688,15 @@ export default async function GroupDetailPage({ params }) {
                           {m.role}
                         </span>
                         {m.user_id !== user.id && (
-                          <button title="Remove member"
-                            style={{ background: '#fee2e2', color: '#b91c1c', border: 'none', borderRadius: '6px', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                            <UserMinus size={14} />
-                          </button>
+                          <RemoveMemberButton 
+                            groupId={groupId}
+                            targetUserId={m.user_id}
+                            memberName={m.profiles?.full_name || `Member ${i + 1}`}
+                            hasActivity={
+                              contributions?.some(c => c.user_id === m.user_id) || 
+                              payouts?.some(p => p.user_id === m.user_id)
+                            }
+                          />
                         )}
                       </div>
                     </div>
