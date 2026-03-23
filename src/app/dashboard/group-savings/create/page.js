@@ -127,7 +127,6 @@ export default function CreateGroupPage() {
                 <label style={labelStyle}>Contribution Mode</label>
                 <select name="is_fixed_contribution" value={fields.is_fixed_contribution} onChange={handle} style={inputStyle}>
                   <option value="true">Fixed Amount (Members pay set amount)</option>
-                  <option value="false">Flexible - Free Range (Any amount)</option>
                 </select>
               </div>
               {fields.is_fixed_contribution === 'true' ? (

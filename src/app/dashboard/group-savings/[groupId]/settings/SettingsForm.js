@@ -86,22 +86,29 @@ export default function SettingsForm({ group }) {
         {/* Contribution Mode */}
         <div style={{ background: 'white', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
           <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: '#6b7280', marginBottom: '12px' }}>CONTRIBUTION MODE</label>
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-            <div 
-              onClick={() => setContributionMode('fixed')}
-              style={{ flex: 1, padding: '14px', borderRadius: '12px', border: contributionMode === 'fixed' ? '2px solid var(--primary)' : '1px solid #e5e7eb', background: contributionMode === 'fixed' ? '#fff5f5' : 'white', textAlign: 'center', cursor: 'pointer' }}
-            >
-              <p style={{ fontSize: '0.85rem', fontWeight: '700', color: contributionMode === 'fixed' ? 'var(--primary)' : '#6b7280' }}>Fixed</p>
-              <p style={{ fontSize: '0.65rem', color: '#9ca3af' }}>Set amount</p>
+          
+          {group.group_type !== 'rotating' ? (
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+              <div 
+                onClick={() => setContributionMode('fixed')}
+                style={{ flex: 1, padding: '14px', borderRadius: '12px', border: contributionMode === 'fixed' ? '2px solid var(--primary)' : '1px solid #e5e7eb', background: contributionMode === 'fixed' ? '#fff5f5' : 'white', textAlign: 'center', cursor: 'pointer' }}
+              >
+                <p style={{ fontSize: '0.85rem', fontWeight: '700', color: contributionMode === 'fixed' ? 'var(--primary)' : '#6b7280' }}>Fixed</p>
+                <p style={{ fontSize: '0.65rem', color: '#9ca3af' }}>Set amount</p>
+              </div>
+              <div 
+                onClick={() => setContributionMode('flexible')}
+                style={{ flex: 1, padding: '14px', borderRadius: '12px', border: contributionMode === 'flexible' ? '2px solid var(--primary)' : '1px solid #e5e7eb', background: contributionMode === 'flexible' ? '#fff5f5' : 'white', textAlign: 'center', cursor: 'pointer' }}
+              >
+                <p style={{ fontSize: '0.85rem', fontWeight: '700', color: contributionMode === 'flexible' ? 'var(--primary)' : '#6b7280' }}>Flexible</p>
+                <p style={{ fontSize: '0.65rem', color: '#9ca3af' }}>Free range</p>
+              </div>
             </div>
-            <div 
-              onClick={() => setContributionMode('flexible')}
-              style={{ flex: 1, padding: '14px', borderRadius: '12px', border: contributionMode === 'flexible' ? '2px solid var(--primary)' : '1px solid #e5e7eb', background: contributionMode === 'flexible' ? '#fff5f5' : 'white', textAlign: 'center', cursor: 'pointer' }}
-            >
-              <p style={{ fontSize: '0.85rem', fontWeight: '700', color: contributionMode === 'flexible' ? 'var(--primary)' : '#6b7280' }}>Flexible</p>
-              <p style={{ fontSize: '0.65rem', color: '#9ca3af' }}>Free range</p>
+          ) : (
+            <div style={{ padding: '4px 0 16px', color: '#16a34a', fontSize: '0.85rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CheckCircle size={16} /> FIXED AMOUNT ONLY (REQUIRED FOR ROTATING)
             </div>
-          </div>
+          )}
 
           {contributionMode === 'fixed' ? (
             <div>
