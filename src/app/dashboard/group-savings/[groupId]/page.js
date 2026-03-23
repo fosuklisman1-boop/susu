@@ -663,17 +663,19 @@ export default async function GroupDetailPage({ params }) {
               </>
             )}
 
-            {/* Admin: Danger Zone */}
-            <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '16px', padding: '16px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <h4 style={{ color: '#b91c1c', fontSize: '0.9rem', fontWeight: '700', marginBottom: '8px' }}>⚠️ Admin Funds Management</h4>
-              
-              <GroupWithdrawalForm 
-                availableBalance={availablePot}
-                groupId={groupId}
-                groupName={group.name}
-                userEmail={user.email}
-              />
-            </div>
+            {/* Admin: Danger Zone (Hidden for Rotating groups as funds are for payouts) */}
+            {group.group_type !== 'rotating' && (
+              <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '16px', padding: '16px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <h4 style={{ color: '#b91c1c', fontSize: '0.9rem', fontWeight: '700', marginBottom: '8px' }}>⚠️ Admin Funds Management</h4>
+                
+                <GroupWithdrawalForm 
+                  availableBalance={availablePot}
+                  groupId={groupId}
+                  groupName={group.name}
+                  userEmail={user.email}
+                />
+              </div>
+            )}
           </>
         )}
 
