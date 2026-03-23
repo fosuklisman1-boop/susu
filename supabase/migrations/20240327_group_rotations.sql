@@ -1,4 +1,5 @@
 -- Phase 51: Group Rotations & Completion Flow
+-- REPAIR: Fixing wallet_id and balance column names
 
 -- 1. Add rotation_index to savings_groups (tracks the current round of the group)
 ALTER TABLE public.savings_groups 
@@ -29,17 +30,15 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-    v_group_wallet_id UUID;
-    v_user_wallet_id UUID;
-    v_recipient_profile_id UUID;
+    v_payout_id UUID;
     v_current_cycle INTEGER;
     v_max_members INTEGER;
     v_rotation_index INTEGER;
     v_everyone_paid BOOLEAN;
 BEGIN
     -- 1. Get Group details (Lock for update)
-    SELECT wallet_id, current_cycle, max_members, rotation_index 
-    INTO v_group_wallet_id, v_current_cycle, v_max_members, v_rotation_index
+    SELECT current_cycle, max_members, rotation_index 
+    INTO v_current_cycle, v_max_members, v_rotation_index
     FROM public.savings_groups
     WHERE id = p_group_id
     FOR UPDATE;
@@ -63,6 +62,7 @@ BEGIN
         AND c.user_id = gm.user_id
         AND c.cycle_number = v_current_cycle
         AND c.rotation_number = v_rotation_index
+        AND c.status = 'success'
     );
 
     IF NOT v_everyone_paid THEN
@@ -71,40 +71,64 @@ BEGIN
 
     -- 4. Record the Payout with rotation_number
     INSERT INTO public.payouts (group_id, user_id, amount, cycle_number, status, rotation_number)
-    VALUES (p_group_id, p_user_id, p_amount, p_cycle_number, 'completed', v_rotation_index);
+    VALUES (p_group_id, p_user_id, p_amount, p_cycle_number, 'completed', v_rotation_index)
+    RETURNING id INTO v_payout_id;
 
-    -- 5. Update Wallets & Ledger
+    -- 5. Update Wallets
     -- Deduct from group pot
     UPDATE public.wallets 
-    SET available_balance = available_balance - p_amount,
-        total_balance = total_balance - p_amount
-    WHERE id = v_group_wallet_id;
-
-    INSERT INTO public.ledger_entries (wallet_id, amount, type, description, reference_id)
-    VALUES (v_group_wallet_id, -p_amount, 'debit', 'Group Payout - Cycle ' || p_cycle_number || ' (Round ' || v_rotation_index || ')', p_group_id);
+    SET balance = balance - p_amount,
+        updated_at = NOW()
+    WHERE group_id = p_group_id;
 
     -- Credit user wallet
-    SELECT wallet_id INTO v_user_wallet_id FROM public.profiles WHERE id = p_user_id;
+    INSERT INTO public.wallets (user_id, balance)
+    VALUES (p_user_id, p_amount)
+    ON CONFLICT (user_id) DO UPDATE
+    SET balance = public.wallets.balance + EXCLUDED.balance,
+        updated_at = NOW();
 
-    UPDATE public.wallets 
-    SET available_balance = available_balance + p_amount,
-        total_balance = total_balance + p_amount
-    WHERE id = v_user_wallet_id;
+    -- 6. Record Ledger entries in 'transactions' table
+    -- Group Outflow
+    INSERT INTO public.transactions (user_id, group_id, type, amount, status, reference, source_table, source_id, metadata)
+    VALUES (
+        p_user_id, 
+        p_group_id, 
+        'withdrawal', 
+        p_amount, 
+        'success', 
+        'PAYOUT-OUT-' || p_group_id || '-' || v_rotation_index || '-' || p_cycle_number || '-' || extract(epoch from now())::text, 
+        'payouts', 
+        v_payout_id,
+        jsonb_build_object('cycle', p_cycle_number, 'rotation', v_rotation_index, 'type', 'payout_withdrawal')
+    );
 
-    INSERT INTO public.ledger_entries (wallet_id, amount, type, description, reference_id)
-    VALUES (v_user_wallet_id, p_amount, 'credit', 'Group Payout Received - Cycle ' || p_cycle_number || ' (Round ' || v_rotation_index || ')', p_group_id);
+    -- User Inflow
+    INSERT INTO public.transactions (user_id, type, amount, status, reference, source_table, source_id, metadata)
+    VALUES (
+        p_user_id, 
+        'plan_deposit', 
+        p_amount, 
+        'success', 
+        'PAYOUT-IN-' || p_group_id || '-' || v_rotation_index || '-' || p_cycle_number || '-' || extract(epoch from now())::text, 
+        'payouts', 
+        v_payout_id,
+        jsonb_build_object('cycle', p_cycle_number, 'rotation', v_rotation_index, 'type', 'payout_deposit')
+    );
 
-    -- 6. Advance Cycle OR Complete Group
+    -- 7. Advance Cycle OR Complete Group
     IF v_current_cycle >= v_max_members THEN
-        -- Final payout recorded! Close the group
+        -- Final payout recorded! Mark as completed
         UPDATE public.savings_groups 
         SET status = 'completed',
-            current_cycle = v_current_cycle + 1 -- Keep incrementing for records
+            current_cycle = v_current_cycle + 1,
+            updated_at = NOW()
         WHERE id = p_group_id;
     ELSE
         -- Move to next cycle
         UPDATE public.savings_groups 
-        SET current_cycle = v_current_cycle + 1
+        SET current_cycle = v_current_cycle + 1,
+            updated_at = NOW()
         WHERE id = p_group_id;
     END IF;
 
