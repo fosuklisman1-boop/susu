@@ -409,3 +409,40 @@ export async function updateGroupStatus(groupId, newStatus) {
   revalidatePath(`/dashboard/group-savings/${groupId}/settings`)
   return { success: true }
 }
+
+export async function updateMemberPayoutOrder(groupId, orderMapping) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const adminSupabase = await createServiceRoleClient()
+
+  // Verify admin permissions
+  const { data: group } = await adminSupabase.from('savings_groups').select('created_by').eq('id', groupId).single()
+  const { data: member } = await adminSupabase.from('group_members').select('role').eq('group_id', groupId).eq('user_id', user.id).maybeSingle()
+  
+  if (group?.created_by !== user.id && member?.role !== 'admin') {
+    return { error: 'Only admins can change payout order.' }
+  }
+
+  // Perform updates for each member
+  const updates = Object.entries(orderMapping).map(([userId, order]) => {
+    return adminSupabase
+      .from('group_members')
+      .update({ payout_order: order })
+      .eq('group_id', groupId)
+      .eq('user_id', userId)
+  })
+
+  const results = await Promise.all(updates)
+  const errors = results.filter(r => r.error).map(r => r.error.message)
+
+  if (errors.length > 0) {
+    console.error('Batch update order errors:', errors)
+    return { error: 'Failed to update some positions.' }
+  }
+
+  revalidatePath(`/dashboard/group-savings/${groupId}`)
+  revalidatePath(`/dashboard/group-savings/${groupId}/settings`)
+  return { success: true }
+}
