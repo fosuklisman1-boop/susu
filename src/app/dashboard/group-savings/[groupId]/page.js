@@ -838,6 +838,7 @@ export default async function GroupDetailPage({ params }) {
               fixedAmount={group.contribution_amount}
               minAmount={group.min_contribution_amount}
               cycleNumber={currentCycle}
+              rotationNumber={group.rotation_index || 1}
             />
           )
         })()}

@@ -60,7 +60,9 @@ export async function POST(request) {
             status: 'success',
             provider: 'paystack',
             contributor_name: metadata?.contributor_name || metadata?.contributorName || customer.first_name || 'Group Member',
-            contributor_email: customer.email
+            contributor_email: customer.email,
+            cycle_number: metadata?.cycle_number || null,
+            rotation_number: metadata?.rotation_number || 1
           })
         }
       }
