@@ -19,12 +19,12 @@ export async function getUserProfile() {
     
   if (!data && !error) {
     // Auto-repair: Create a profile if missing for an existing user
-    console.log(`[DEBUG] No profile found for ${user.id}. Creating basic profile...`)
     const { data: newProfile } = await supabase.from('profiles').insert({
       id: user.id,
       full_name: user.user_metadata?.full_name || user.email.split('@')[0],
-      phone_number: user.user_metadata?.phone_number || ''
-    }).select().single()
+      phone_number: user.user_metadata?.phone_number || '',
+      email: user.email
+    }).select().maybeSingle()
     data = newProfile
   }
   
