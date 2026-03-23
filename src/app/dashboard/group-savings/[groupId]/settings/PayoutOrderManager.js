@@ -87,20 +87,22 @@ export default function PayoutOrderManager({ groupId, initialMembers, currentCyc
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {members.map((m, i) => {
           const isLocked = i < currentCycle - 1
+          const isDue = i === currentCycle - 1
           const isFirstMovable = i === currentCycle - 1
           const isLast = i === members.length - 1
 
           return (
             <div key={m.user_id} style={{ 
               display: 'flex', alignItems: 'center', gap: '16px', padding: '12px 16px', 
-              background: isLocked ? '#f9fafb' : 'white', 
-              borderRadius: '12px', border: '1px solid #f3f4f6',
-              transition: 'all 0.2s ease'
+              background: isLocked ? '#f9fafb' : (isDue ? '#fffdf0' : 'white'), 
+              borderRadius: '12px', border: `1px solid ${isDue ? '#fef08a' : '#f3f4f6'}`,
+              transition: 'all 0.2s ease',
+              boxShadow: isDue ? '0 4px 12px rgba(254, 240, 138, 0.2)' : 'none'
             }}>
               <div style={{ 
                 width: '32px', height: '32px', borderRadius: '50%', 
-                background: isLocked ? '#e5e7eb' : '#1f2937', 
-                color: isLocked ? '#6b7280' : 'white', 
+                background: isDue ? '#fbbf24' : (isLocked ? '#e5e7eb' : '#1f2937'), 
+                color: isDue || !isLocked ? 'white' : '#6b7280', 
                 display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '0.85rem'
               }}>
                 {i + 1}
@@ -113,10 +115,11 @@ export default function PayoutOrderManager({ groupId, initialMembers, currentCyc
                 <div>
                   <p style={{ fontSize: '0.9rem', fontWeight: '700', color: isLocked ? '#6b7280' : '#111827' }}>
                     {m.profiles?.full_name || 'Member ' + (i + 1)}
-                    {isLocked && <span style={{ marginLeft: '8px', fontSize: '0.65rem', background: '#e5e7eb', color: '#4b5563', padding: '2px 6px', borderRadius: '4px' }}>LOCKED</span>}
+                    {isLocked && <span style={{ marginLeft: '8px', fontSize: '0.65rem', background: '#e5e7eb', color: '#4b5563', padding: '2px 6px', borderRadius: '4px' }}>PAID / LOCKED</span>}
+                    {isDue && <span style={{ marginLeft: '8px', fontSize: '0.65rem', background: '#fef08a', color: '#854d0e', padding: '2px 6px', borderRadius: '4px' }}>CURRENTLY DUE</span>}
                   </p>
                   <p style={{ fontSize: '0.7rem', color: '#9ca3af' }}>
-                    {isLocked ? 'Cycle completed/active' : 'Upcoming position'}
+                    {isLocked ? 'Cycle completed' : (isDue ? 'Can be moved to change next recipient' : 'Upcoming position')}
                   </p>
                 </div>
               </div>
