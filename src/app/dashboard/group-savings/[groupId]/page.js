@@ -289,7 +289,7 @@ export default async function GroupDetailPage({ params }) {
                   {(() => {
                     if (!group.start_date || !myPosition) return 'Not set yet'
                     const org = new Date(group.start_date)
-                    org.setDate(org.getDate() + (myPosition - 1) * freqDays)
+                    org.setDate(org.getDate() + myPosition * freqDays)
                     
                     const est = new Date(org)
                     if (myPosition >= currentCycle) {
