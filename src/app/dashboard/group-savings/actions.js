@@ -197,9 +197,20 @@ export async function joinGroup(prevState, formData) {
   // Phase 36: Auto-start rotating groups when full
   if (group.group_type === 'rotating' && group.max_members && nextOrder === Number(group.max_members)) {
     const adminSupabase = await createServiceRoleClient()
+    
+    // Calculate first payout date (Now + Frequency)
+    let freqDays = 7
+    if (group.frequency === 'daily') freqDays = 1
+    if (group.frequency === 'weekly') freqDays = 7
+    if (group.frequency === 'bi-weekly') freqDays = 14
+    if (group.frequency === 'monthly') freqDays = 30
+
+    const initialStartDate = new Date()
+    initialStartDate.setDate(initialStartDate.getDate() + freqDays)
+
     const { error: startError } = await adminSupabase
       .from('savings_groups')
-      .update({ start_date: new Date().toISOString() })
+      .update({ start_date: initialStartDate.toISOString() })
       .eq('id', group.id)
     if (startError) console.error('Failed to set group start_date while full', startError)
   }
