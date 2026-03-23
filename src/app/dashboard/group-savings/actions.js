@@ -296,6 +296,38 @@ export async function updateGroup(prevState, formData) {
 
   console.log('UPDATE SUCCESSFUL:', updateData)
 
+  // Phase 34 Refinement: Check if reducing max_members makes the group full
+  const updatedGroup = updateData[0]
+  if (group.group_type === 'rotating' && updatedGroup.max_members && !updatedGroup.start_date) {
+    const { count } = await supabase
+      .from('group_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('group_id', groupId)
+    
+    if (count >= Number(updatedGroup.max_members)) {
+      const adminSupabase = await createServiceRoleClient()
+      
+      // Calculate first payout date (Now + Frequency)
+      let freqDays = 7
+      const f = updatedGroup.frequency
+      if (f === 'daily' || f === '1') freqDays = 1
+      else if (f === 'weekly' || f === '7') freqDays = 7
+      else if (f === 'bi-weekly' || f === '14') freqDays = 14
+      else if (f === 'monthly' || f === '30') freqDays = 30
+      else if (!isNaN(Number(f))) freqDays = Number(f)
+
+      const initialStartDate = new Date()
+      initialStartDate.setDate(initialStartDate.getDate() + freqDays)
+
+      await adminSupabase
+        .from('savings_groups')
+        .update({ start_date: initialStartDate.toISOString() })
+        .eq('id', groupId)
+      
+      console.log('Group auto-started after member limit reduction.')
+    }
+  }
+
   revalidatePath(`/dashboard/group-savings/${groupId}`)
   revalidatePath(`/dashboard/group-savings/${groupId}/settings`)
   revalidatePath('/dashboard/group-savings')
