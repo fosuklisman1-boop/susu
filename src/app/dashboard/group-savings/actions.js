@@ -194,6 +194,15 @@ export async function joinGroup(prevState, formData) {
     return { error: `Could not join group: ${joinError.message}` }
   }
 
+  // Phase 36: Auto-start rotating groups when full
+  if (group.group_type === 'rotating' && group.max_members && nextOrder === group.max_members) {
+    const { error: startError } = await supabase
+      .from('savings_groups')
+      .update({ start_date: new Date().toISOString() })
+      .eq('id', group.id)
+    if (startError) console.error('Failed to set group start_date while full', startError)
+  }
+
   revalidatePath('/dashboard/group-savings')
   return { success: true, groupId: group.id, groupName: group.name }
 }

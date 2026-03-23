@@ -146,6 +146,35 @@ export default async function GroupDetailPage({ params }) {
   })()
   const isLockedUntilFull = !!group.max_members && (members?.length || 0) < group.max_members
 
+  // Phase 36: Check if everyone has paid for the current cycle (Rotating)
+  const everyonePaidThisCycle = group.group_type === 'rotating' 
+    ? sortedMembers?.every(m => contributions?.some(c => 
+        c.cycle_number === currentCycle && 
+        (c.user_id === m.user_id || (m.profiles?.email && c.contributor_email === m.profiles.email))
+      ))
+    : true
+
+  // Phase 36: Calculate delay for overdue cycles
+  const delayDays = (() => {
+    if (!group.start_date || group.group_type !== 'rotating' || everyonePaidThisCycle) return 0
+    
+    let freqDays = 7
+    if (!isNaN(Number(group.frequency))) freqDays = Number(group.frequency)
+    else if (group.frequency === 'weekly') freqDays = 7
+    else if (group.frequency === 'biweekly') freqDays = 14
+    else if (group.frequency === 'monthly') freqDays = 30
+
+    const dueDate = new Date(group.start_date)
+    dueDate.setDate(dueDate.getDate() + (currentCycle - 1) * freqDays)
+    
+    const today = new Date()
+    if (today > dueDate) {
+      const diffTime = Math.abs(today - dueDate)
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    }
+    return 0
+  })()
+
   const typeLabels = {
     rotating: 'Rotating Group Savings',
     contribution: 'Contribution Group Savings',
@@ -163,9 +192,14 @@ export default async function GroupDetailPage({ params }) {
           <ArrowLeft size={20} />
         </Link>
         <h2 style={{ fontSize: '1.1rem', fontWeight: '600' }}>{group.name}</h2>
-        {(isClosed || isExpired) && (
+        {(isClosed || (isExpired && group.group_type !== 'rotating')) && (
           <span style={{ background: '#fee2e2', color: '#b91c1c', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: '800' }}>
             {isClosed ? 'CLOSED' : 'EXPIRED'}
+          </span>
+        )}
+        {isExpired && group.group_type === 'rotating' && !isClosed && (
+          <span style={{ background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: '800' }}>
+            OVERDUE
           </span>
         )}
         <div style={{ flex: 1 }}></div>
@@ -237,6 +271,12 @@ export default async function GroupDetailPage({ params }) {
                     }
 
                     d.setDate(d.getDate() + offset * freqDays)
+                    
+                    // Add delay if we are at or past this cycle and it's stalled
+                    if (myPosition >= currentCycle) {
+                      d.setDate(d.getDate() + delayDays)
+                    }
+
                     return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                   })()}
                 </p>
@@ -509,18 +549,28 @@ export default async function GroupDetailPage({ params }) {
                           }
 
                           d.setDate(d.getDate() + offset * freqDays)
+                          
+                          // Phase 36: Apply delay to current and future cycles
+                          if (cycleNum >= currentCycle) {
+                            d.setDate(d.getDate() + delayDays)
+                          }
+
                             return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
                           })()}
                         </p>
                       </div>
                       {isCurrent && m?.user_id && !isPaid && (
-                        (isClosed || isExpired) ? (
+                        isClosed ? (
                           <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#b91c1c', padding: '8px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '600' }}>
-                            {isClosed ? 'Group Closed' : 'Goal Expired'}
+                            Group Closed
                           </div>
                         ) : isLockedUntilFull ? (
                           <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '8px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '600' }}>
                             Waiting for {group.max_members - (members?.length || 0)} more members...
+                          </div>
+                        ) : !everyonePaidThisCycle ? (
+                          <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', color: '#0369a1', padding: '8px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Loader2 size={12} className="animate-spin" /> In Progress
                           </div>
                         ) : (
                           <PayoutAction 
