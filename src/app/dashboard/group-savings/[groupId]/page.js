@@ -154,7 +154,24 @@ export default async function GroupDetailPage({ params }) {
       ))
     : true
 
-  // Phase 36: Calculate delay for overdue cycles
+  // Phase 45: Calculate scheduled payout date for the current cycle
+  const scheduledPayoutDate = (() => {
+    if (!group.start_date || group.group_type !== 'rotating') return null
+    
+    let freqDays = 7
+    if (!isNaN(Number(group.frequency))) freqDays = Number(group.frequency)
+    else if (group.frequency === 'weekly') freqDays = 7
+    else if (group.frequency === 'biweekly') freqDays = 14
+    else if (group.frequency === 'monthly') freqDays = 30
+
+    const d = new Date(group.start_date)
+    d.setDate(d.getDate() + currentCycle * freqDays)
+    return d
+  })()
+
+  const isPayoutDue = !scheduledPayoutDate || new Date() >= scheduledPayoutDate
+
+  // Phase 36: Calculate delay for overdue cycles (if everyone has paid but date was missed)
   const delayDays = (() => {
     if (!group.start_date || group.group_type !== 'rotating' || everyonePaidThisCycle) return 0
     
@@ -571,6 +588,10 @@ export default async function GroupDetailPage({ params }) {
                         ) : !everyonePaidThisCycle ? (
                           <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', color: '#0369a1', padding: '8px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span className="animate-spin" style={{ display: 'inline-block' }}>⏳</span> In Progress
+                          </div>
+                        ) : !isPayoutDue ? (
+                          <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '8px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            📅 Due {scheduledPayoutDate?.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                           </div>
                         ) : (
                           <PayoutAction 
