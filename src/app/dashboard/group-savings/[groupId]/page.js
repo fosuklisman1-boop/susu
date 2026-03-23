@@ -752,7 +752,11 @@ export default async function GroupDetailPage({ params }) {
 
         {/* ── CONTRIBUTE SECTION ───────────────────────── */}
         {(() => {
-          if (group.status === 'completed') {
+          const isRotationFinished = group.group_type === 'rotating' && 
+            payouts?.length > 0 && 
+            payouts?.length >= (group.max_members || members?.length || 0);
+
+          if (group.status === 'completed' || isRotationFinished) {
             return (
               <GroupCompletionCeremony 
                 groupId={groupId} 

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ArrowLeft, Settings as SettingsIcon, Save, Info } from 'lucide-react'
 import SettingsForm from './SettingsForm'
 import PayoutOrderManager from './PayoutOrderManager'
+import RestartRoundButton from './RestartRoundButton'
 
 export default async function GroupSettingsPage({ params }) {
   const { groupId } = await params
@@ -63,6 +64,13 @@ export default async function GroupSettingsPage({ params }) {
             groupId={groupId} 
             initialMembers={members} 
             currentCycle={group.current_cycle || 1} 
+          />
+        )}
+
+        {group.group_type === 'rotating' && (
+          <RestartRoundButton 
+            groupId={groupId} 
+            rotationIndex={group.rotation_index || 1} 
           />
         )}
       </div>
