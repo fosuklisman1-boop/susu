@@ -200,10 +200,12 @@ export async function joinGroup(prevState, formData) {
     
     // Calculate first payout date (Now + Frequency)
     let freqDays = 7
-    if (group.frequency === 'daily') freqDays = 1
-    if (group.frequency === 'weekly') freqDays = 7
-    if (group.frequency === 'bi-weekly') freqDays = 14
-    if (group.frequency === 'monthly') freqDays = 30
+    const f = group.frequency
+    if (f === 'daily' || f === '1') freqDays = 1
+    else if (f === 'weekly' || f === '7') freqDays = 7
+    else if (f === 'bi-weekly' || f === '14') freqDays = 14
+    else if (f === 'monthly' || f === '30') freqDays = 30
+    else if (!isNaN(Number(f))) freqDays = Number(f)
 
     const initialStartDate = new Date()
     initialStartDate.setDate(initialStartDate.getDate() + freqDays)
@@ -508,10 +510,12 @@ export async function restartGroupRotation(groupId) {
 
   // Perform Restart
   let freqDays = 7
-  if (group.frequency === 'daily') freqDays = 1
-  if (group.frequency === 'weekly') freqDays = 7
-  if (group.frequency === 'bi-weekly') freqDays = 14
-  if (group.frequency === 'monthly') freqDays = 30
+  const f = group.frequency
+  if (f === 'daily' || f === '1') freqDays = 1
+  else if (f === 'weekly' || f === '7') freqDays = 7
+  else if (f === 'bi-weekly' || f === '14') freqDays = 14
+  else if (f === 'monthly' || f === '30') freqDays = 30
+  else if (!isNaN(Number(f))) freqDays = Number(f)
 
   const nextStartDate = new Date()
   nextStartDate.setDate(nextStartDate.getDate() + freqDays)
