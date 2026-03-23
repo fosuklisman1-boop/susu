@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/utils/supabase/server'
+import { createClient, createServiceRoleClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -195,8 +195,9 @@ export async function joinGroup(prevState, formData) {
   }
 
   // Phase 36: Auto-start rotating groups when full
-  if (group.group_type === 'rotating' && group.max_members && nextOrder === group.max_members) {
-    const { error: startError } = await supabase
+  if (group.group_type === 'rotating' && group.max_members && nextOrder === Number(group.max_members)) {
+    const adminSupabase = await createServiceRoleClient()
+    const { error: startError } = await adminSupabase
       .from('savings_groups')
       .update({ start_date: new Date().toISOString() })
       .eq('id', group.id)
