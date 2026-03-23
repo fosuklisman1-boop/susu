@@ -446,3 +446,36 @@ export async function updateMemberPayoutOrder(groupId, orderMapping) {
   revalidatePath(`/dashboard/group-savings/${groupId}/settings`)
   return { success: true }
 }
+
+export async function restartGroupRotation(groupId) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const adminSupabase = await createServiceRoleClient()
+
+  // Verify admin permissions
+  const { data: group } = await adminSupabase.from('savings_groups').select('created_by, rotation_index, status').eq('id', groupId).single()
+  const { data: member } = await adminSupabase.from('group_members').select('role').eq('group_id', groupId).eq('user_id', user.id).maybeSingle()
+  
+  if (group?.created_by !== user.id && member?.role !== 'admin') {
+    return { error: 'Only admins can restart the group.' }
+  }
+
+  // Perform Restart
+  const { error } = await adminSupabase
+    .from('savings_groups')
+    .update({ 
+      status: 'active',
+      current_cycle: 1,
+      rotation_index: (group.rotation_index || 1) + 1,
+      start_date: new Date().toISOString() // Reset start date to today for the new round
+    })
+    .eq('id', groupId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/dashboard/group-savings/${groupId}`)
+  revalidatePath(`/dashboard/group-savings/${groupId}/settings`)
+  return { success: true }
+}

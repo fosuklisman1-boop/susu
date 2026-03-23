@@ -6,6 +6,9 @@ import PaystackButton from '@/components/PaystackButton'
 import GroupContributionForm from './GroupContributionForm'
 import GroupWithdrawalForm from './GroupWithdrawalForm'
 import PayoutAction from './PayoutAction'
+import { restartGroupRotation } from '../actions'
+import { PartyPopper, RotateCcw, CheckCircle2 } from 'lucide-react'
+import GroupCompletionCeremony from './GroupCompletionCeremony'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -48,9 +51,10 @@ export default async function GroupDetailPage({ params }) {
   // Fetch successful contributions for history and totals
   const { data: contributions, error: gcError } = await supabase
     .from('group_contributions')
-    .select('id, amount, status, contributor_name, contributor_email, created_at, user_id, group_id, cycle_number, profiles(full_name)')
+    .select('id, amount, status, contributor_name, contributor_email, created_at, user_id, group_id, cycle_number, rotation_number, profiles(full_name)')
     .eq('group_id', groupId)
     .eq('status', 'success')
+    .eq('rotation_number', group.rotation_index || 1)
     .order('created_at', { ascending: false })
 
   console.log(`[DEBUG] GroupID=${groupId} | UserID=${user.id} | GC_Count=${contributions?.length} | Error=${gcError?.message || 'none'}`)
@@ -126,6 +130,7 @@ export default async function GroupDetailPage({ params }) {
     .from('payouts')
     .select('*')
     .eq('group_id', groupId)
+    .eq('rotation_number', group.rotation_index || 1)
 
   const currentCycle = group.current_cycle || 1
   const sortedMembers = members?.sort((a, b) => {
@@ -748,6 +753,15 @@ export default async function GroupDetailPage({ params }) {
 
         {/* ── CONTRIBUTE SECTION ───────────────────────── */}
         {(() => {
+          if (group.status === 'completed') {
+            return (
+              <GroupCompletionCeremony 
+                groupId={groupId} 
+                isAdmin={isAdmin} 
+                rotationIndex={group.rotation_index || 1} 
+              />
+            )
+          }
           if (isClosed || isExpired || isLockedUntilFull) {
             return (
               <div style={{ 
