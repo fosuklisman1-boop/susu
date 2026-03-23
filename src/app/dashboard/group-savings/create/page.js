@@ -167,12 +167,8 @@ export default function CreateGroupPage() {
                 <input type="number" name="max_members" placeholder="e.g. 10"
                   value={fields.max_members} onChange={handle} style={inputStyle} required />
                 <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '6px' }}>
-                  The payout amount will be (Members × Contribution).
+                  The payout amount will be (Members × Contribution). The group will automatically start once full.
                 </p>
-              </div>
-              <div>
-                <input type="date" name="startDate" value={fields.startDate || ''} onChange={handle}
-                  placeholder="Choose a start date" style={{...inputStyle, color: fields.startDate ? '#111827' : '#9ca3af'}} />
               </div>
               <div>
                 <label style={labelStyle}>Add a group Icon or Logo</label>
