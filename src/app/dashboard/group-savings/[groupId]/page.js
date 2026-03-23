@@ -184,7 +184,7 @@ export default async function GroupDetailPage({ params }) {
   const scheduledPayoutDate = (() => {
     if (!group.start_date || group.group_type !== 'rotating') return null
     const d = new Date(group.start_date)
-    d.setDate(d.getDate() + (currentCycle - 1) * freqDays)
+    d.setDate(d.getDate() + currentCycle * freqDays)
     return d
   })()
 
@@ -195,7 +195,7 @@ export default async function GroupDetailPage({ params }) {
     if (!group.start_date || group.group_type !== 'rotating' || everyonePaidThisCycle) return 0
     
     const dueDate = new Date(group.start_date)
-    dueDate.setDate(dueDate.getDate() + (currentCycle - 1) * freqDays)
+    dueDate.setDate(dueDate.getDate() + currentCycle * freqDays)
     
     const today = new Date()
     if (today > dueDate) {
@@ -576,7 +576,7 @@ export default async function GroupDetailPage({ params }) {
                             if (!group.start_date) return 'TBD'
                             
                             const originalDate = new Date(group.start_date)
-                            const offset = i
+                            const offset = i + 1
                             originalDate.setDate(originalDate.getDate() + offset * freqDays)
                             
                             const estimatedDate = new Date(originalDate)

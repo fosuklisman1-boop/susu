@@ -197,24 +197,10 @@ export async function joinGroup(prevState, formData) {
   // Phase 36: Auto-start rotating groups when full
   if (group.group_type === 'rotating' && group.max_members && nextOrder === Number(group.max_members)) {
     const adminSupabase = await createServiceRoleClient()
-    
-    // Calculate first payout date (Now + Frequency)
-    let freqDays = 7
-    const f = group.frequency
-    if (f === 'daily' || f === '1') freqDays = 1
-    else if (f === 'weekly' || f === '7') freqDays = 7
-    else if (f === 'bi-weekly' || f === '14') freqDays = 14
-    else if (f === 'monthly' || f === '30') freqDays = 30
-    else if (!isNaN(Number(f))) freqDays = Number(f)
-
-    const initialStartDate = new Date()
-    initialStartDate.setDate(initialStartDate.getDate() + freqDays)
-
-    const { error: startError } = await adminSupabase
+    await adminSupabase
       .from('savings_groups')
-      .update({ start_date: initialStartDate.toISOString() })
+      .update({ start_date: new Date().toISOString() })
       .eq('id', group.id)
-    if (startError) console.error('Failed to set group start_date while full', startError)
   }
 
   revalidatePath('/dashboard/group-savings')
@@ -308,22 +294,9 @@ export async function updateGroup(prevState, formData) {
     
     if (count >= Number(updatedGroup.max_members)) {
       const adminSupabase = await createServiceRoleClient()
-      
-      // Calculate first payout date (Now + Frequency)
-      let freqDays = 7
-      const f = updatedGroup.frequency
-      if (f === 'daily' || f === '1') freqDays = 1
-      else if (f === 'weekly' || f === '7') freqDays = 7
-      else if (f === 'bi-weekly' || f === '14') freqDays = 14
-      else if (f === 'monthly' || f === '30') freqDays = 30
-      else if (!isNaN(Number(f))) freqDays = Number(f)
-
-      const initialStartDate = new Date()
-      initialStartDate.setDate(initialStartDate.getDate() + freqDays)
-
       await adminSupabase
         .from('savings_groups')
-        .update({ start_date: initialStartDate.toISOString() })
+        .update({ start_date: new Date().toISOString() })
         .eq('id', groupId)
       
       console.log('Group auto-started after member limit reduction.')
@@ -508,25 +481,13 @@ export async function restartGroupRotation(groupId) {
     return { error: 'Only admins can restart the group.' }
   }
 
-  // Perform Restart
-  let freqDays = 7
-  const f = group.frequency
-  if (f === 'daily' || f === '1') freqDays = 1
-  else if (f === 'weekly' || f === '7') freqDays = 7
-  else if (f === 'bi-weekly' || f === '14') freqDays = 14
-  else if (f === 'monthly' || f === '30') freqDays = 30
-  else if (!isNaN(Number(f))) freqDays = Number(f)
-
-  const nextStartDate = new Date()
-  nextStartDate.setDate(nextStartDate.getDate() + freqDays)
-
   const { error } = await adminSupabase
     .from('savings_groups')
     .update({ 
       status: 'active',
       current_cycle: 1,
       rotation_index: (group.rotation_index || 1) + 1,
-      start_date: nextStartDate.toISOString() 
+      start_date: new Date().toISOString() 
     })
     .eq('id', groupId)
 
