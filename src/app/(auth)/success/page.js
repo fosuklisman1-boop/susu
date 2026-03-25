@@ -7,7 +7,7 @@ export default function SuccessSplash() {
   const router = useRouter()
   const audioContextRef = useRef(null)
 
-  // Synthesized "Clink" sound using Web Audio API
+  // Synthesized "Premium Shimmer + Clink" sound
   const playClink = () => {
     try {
       if (!audioContextRef.current) {
@@ -15,29 +15,41 @@ export default function SuccessSplash() {
       }
       
       const ctx = audioContextRef.current
-      const osc = ctx.createOscillator()
-      const gain = ctx.createGain()
+      const now = ctx.currentTime
       
-      osc.type = 'triangle'
-      osc.frequency.setValueAtTime(1500, ctx.currentTime)
-      osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1)
+      // The Shimmer (Higher, softer)
+      const shimOsc = ctx.createOscillator()
+      const shimGain = ctx.createGain()
+      shimOsc.type = 'sine'
+      shimOsc.frequency.setValueAtTime(2500, now)
+      shimOsc.frequency.exponentialRampToValueAtTime(1200, now + 0.4)
+      shimGain.gain.setValueAtTime(0.1, now)
+      shimGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5)
+      shimOsc.connect(shimGain)
+      shimGain.connect(ctx.destination)
+      shimOsc.start(now)
+      shimOsc.stop(now + 0.5)
+
+      // The Clink (Sharper)
+      const clinkOsc = ctx.createOscillator()
+      const clinkGain = ctx.createGain()
+      clinkOsc.type = 'triangle'
+      clinkOsc.frequency.setValueAtTime(1500, now + 0.05)
+      clinkGain.gain.setValueAtTime(0.2, now + 0.05)
+      clinkGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3)
+      clinkOsc.connect(clinkGain)
+      clinkGain.connect(ctx.destination)
+      clinkOsc.start(now + 0.05)
+      clinkOsc.stop(now + 0.3)
       
-      gain.gain.setValueAtTime(0.3, ctx.currentTime)
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2)
-      
-      osc.connect(gain)
-      gain.connect(ctx.destination)
-      
-      osc.start()
-      osc.stop(ctx.currentTime + 0.2)
     } catch (e) {
       console.error('Audio synthesis failed', e)
     }
   }
 
   useEffect(() => {
-    // Play sound 1.2s into the 5s splash (when coin hits)
-    const soundTimeout = setTimeout(playClink, 1200)
+    // Play sound 0.5s into the splash
+    const soundTimeout = setTimeout(playClink, 500)
     
     // Redirect after 5 seconds
     const redirectTimeout = setTimeout(() => {
@@ -57,47 +69,80 @@ export default function SuccessSplash() {
         backgroundImage: 'url("/images/village-bg.png")',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        filter: 'blur(4px) brightness(0.6)',
+        filter: 'blur(6px) brightness(0.4)',
         position: 'absolute',
         inset: 0,
         zIndex: 0
       }} />
 
-      {/* Atmospheric Overlay */}
+      {/* Atmospheric Radial Overlay */}
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: 'radial-gradient(circle at center, transparent 0%, rgba(69, 10, 10, 0.4) 100%)',
+        background: 'radial-gradient(circle at center, transparent 0%, rgba(15, 23, 42, 0.8) 100%)',
         zIndex: 1
       }} />
 
       <div className="animation-wrapper" style={{ position: 'relative', zIndex: 10, textAlign: 'center' }}>
-        <h2 style={{ color: 'white', fontSize: '2rem', fontWeight: '800', marginBottom: '40px', letterSpacing: '-0.02em', textShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
-          Savings Success!
-        </h2>
-
-        <div className="susu-scene">
-          {/* Animated SVG Coin */}
-          <svg className="coin" width="60" height="60" viewBox="0 0 60 60" style={{ position: 'absolute', top: '-180px', left: '50%', transform: 'translateX(-50%)' }}>
-            <circle cx="30" cy="30" r="28" fill="#ffd700" stroke="#b8860b" strokeWidth="2" />
-            <circle cx="30" cy="30" r="24" fill="none" stroke="#b8860b" strokeWidth="1" strokeDasharray="4 4" />
-            <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="30" fontWeight="bold" fill="#b8860b">₵</text>
-          </svg>
-
-          {/* Susu Box (Traditional Pot) */}
-          <svg className="susu-box" width="160" height="120" viewBox="0 0 160 120" style={{ margin: '0 auto' }}>
-             {/* Pot body */}
-             <path d="M20 100 C 10 120, 150 120, 140 100 L 130 40 C 120 20, 40 20, 30 40 Z" fill="#78350f" stroke="#451a03" strokeWidth="4" />
-             {/* Open slit */}
-             <rect x="65" y="35" width="30" height="6" rx="3" fill="#451a03" />
-             {/* Decorative patterns */}
-             <path d="M40 70 Q 80 90 120 70" fill="none" stroke="#a16207" strokeWidth="2" strokeDasharray="5 5" />
-             <path d="M45 80 Q 80 100 115 80" fill="none" stroke="#a16207" strokeWidth="2" strokeDasharray="3 3" />
-          </svg>
+        <div style={{ marginBottom: '40px' }}>
+          <h2 style={{ color: 'white', fontSize: '2.5rem', fontWeight: '800', marginBottom: '8px', letterSpacing: '-0.04em', textShadow: '0 0 20px rgba(255,215,0,0.3)' }}>
+            Savings Success!
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Empowering Your Future
+          </p>
         </div>
 
-        <p style={{ color: 'rgba(255,255,255,0.9)', marginTop: '40px', fontSize: '1.1rem', fontWeight: '500', maxWidth: '300px', margin: '40px auto 0' }}>
-           Great job starting your savings journey today!
+        <div className="coin-scene">
+          {/* Light Trails / Particle Particles */}
+          <div className="particles">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className={`particle p${i+1}`} />
+            ))}
+          </div>
+
+          {/* Ultra-Modern Floating Coin */}
+          <div className="modern-coin">
+            <svg width="200" height="200" viewBox="0 0 200 200">
+              <defs>
+                <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#fbbf24" />
+                  <stop offset="50%" stopColor="#f59e0b" />
+                  <stop offset="100%" stopColor="#b45309" />
+                </linearGradient>
+                <filter id="glow">
+                  <feGaussianBlur stdDeviation="4" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              
+              {/* Outer Glass Ring */}
+              <circle cx="100" cy="100" r="90" fill="rgba(251, 191, 36, 0.1)" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="0.5" />
+              
+              {/* Main Coin Body */}
+              <circle cx="100" cy="100" r="80" fill="url(#goldGradient)" stroke="#fef3c7" strokeWidth="1" filter="url(#glow)" />
+              
+              {/* Internal Glassmorphism Disc */}
+              <circle cx="100" cy="100" r="65" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="0.5" />
+              
+              {/* Circuitry Patterns */}
+              <g stroke="#fef3c7" strokeWidth="0.5" fill="none" opacity="0.6">
+                <path d="M100 45 V 55 M100 145 V 155 M45 100 H 55 M145 100 H 155" />
+                <circle cx="100" cy="100" r="55" strokeDasharray="10 20" />
+                <path d="M70 70 L 80 80 M120 120 L 130 130 M70 130 L 80 120 M130 70 L 120 80" />
+              </g>
+
+              {/* Central Symbol */}
+              <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fontSize="60" fontWeight="900" fill="#451a03" style={{ textShadow: '0 0 10px rgba(251, 191, 36, 0.5)' }}>₵</text>
+              
+              {/* Floating Shine */}
+              <circle cx="60" cy="60" r="10" fill="white" opacity="0.2" filter="blur(5px)" />
+            </svg>
+          </div>
+        </div>
+
+        <p style={{ color: 'rgba(255,255,255,0.8)', marginTop: '60px', fontSize: '1.2rem', fontWeight: '400', maxWidth: '350px', lineHeight: '1.6', margin: '60px auto 0' }}>
+           High-tech modular savings for the modern Ghanaian dreamer.
         </p>
       </div>
 
@@ -109,43 +154,72 @@ export default function SuccessSplash() {
           align-items: center;
           justify-content: center;
           overflow: hidden;
-          background: #450a0a;
+          background: #0f172a;
           position: fixed;
           top: 0; left: 0;
           z-index: 9999;
-          animation: fadeIn 1s ease-out forwards;
         }
 
-        .susu-scene {
+        .coin-scene {
           position: relative;
-          padding-top: 100px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 300px;
         }
 
-        .coin {
-          animation: coinDrop 1.2s cubic-bezier(0.47, 0, 0.745, 0.715) forwards;
+        .modern-coin {
+          animation: float 4s ease-in-out infinite, rotate3d 10s linear infinite;
+          transform-style: preserve-3d;
+          perspective: 1000px;
+          filter: drop-shadow(0 20px 40px rgba(251, 191, 36, 0.2));
         }
 
-        .susu-box {
-          animation: boxWobble 0.3s ease-out 1.2s;
+        .particles {
+          position: absolute;
+          width: 400px;
+          height: 400px;
+          pointer-events: none;
         }
 
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+        .particle {
+          position: absolute;
+          background: linear-gradient(90deg, transparent, #fbbf24, transparent);
+          height: 1px;
+          width: 100px;
+          opacity: 0;
+          border-radius: 100px;
         }
 
-        @keyframes coinDrop {
-          0% { transform: translate(-50%, -200px) rotate(0deg); opacity: 0; }
-          20% { opacity: 1; }
-          90% { transform: translate(-50%, 65px) rotate(360deg); opacity: 1; }
-          100% { transform: translate(-50%, 65px) rotate(360deg); opacity: 0; }
+        .p1 { top: 20%; left: -10%; animation: trail 3s linear infinite; }
+        .p2 { top: 50%; left: -20%; animation: trail 4s linear 1s infinite; }
+        .p3 { top: 80%; left: -15%; animation: trail 3.5s linear 2s infinite; }
+        .p4 { top: 30%; right: -10%; animation: trailReverse 3.2s linear infinite; }
+        .p5 { top: 60%; right: -20%; animation: trailReverse 4.5s linear 1.5s infinite; }
+        .p6 { top: 90%; right: -15%; animation: trailReverse 3.8s linear 0.5s infinite; }
+
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-30px); }
         }
 
-        @keyframes boxWobble {
-          0% { transform: rotate(0deg) scale(1.05); }
-          25% { transform: rotate(-3deg) scale(1.05); }
-          75% { transform: rotate(3deg) scale(1.05); }
-          100% { transform: rotate(0deg) scale(1); }
+        @keyframes rotate3d {
+          0% { transform: rotateY(0deg); }
+          100% { transform: rotateY(360deg); }
+        }
+
+        @keyframes trail {
+          0% { transform: translateX(0); opacity: 0; }
+          20% { opacity: 0.6; }
+          80% { opacity: 0.6; }
+          100% { transform: translateX(500px); opacity: 0; }
+        }
+
+        @keyframes trailReverse {
+          0% { transform: translateX(0); opacity: 0; }
+          20% { opacity: 0.6; }
+          80% { opacity: 0.6; }
+          100% { transform: translateX(-500px); opacity: 0; }
         }
       `}</style>
     </div>
