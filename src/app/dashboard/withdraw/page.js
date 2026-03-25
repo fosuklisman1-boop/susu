@@ -56,26 +56,9 @@ export default async function WithdrawPage({ searchParams }) {
     const totalOut = (grpWithdrawals || []).reduce((sum, w) => sum + Number(w.amount), 0)
     availableBalance = Math.max(totalIn - totalOut, 0)
   } else {
-    // Standard User Balance logic
-    // 1. Total Wallet Balance (Direct top-ups - standalone withdrawals)
-    const { data: wallet } = await supabase.from('wallets').select('balance').eq('user_id', user.id).maybeSingle()
-    const walletBalance = wallet?.balance ? Number(wallet.balance) : 0
-
-    // 2. Fetch all successful contributions to plans
-    const { data: plans } = await supabase.from('susu_plans').select('*').eq('user_id', user.id).eq('status', 'active')
-    
-    // 3. Add only matured plans to available balance
-    let maturedBalance = 0
-    plans?.forEach(plan => {
-      const current = Number(plan.current_balance || 0)
-      const target = Number(plan.target_amount || 0)
-      if (current >= target) {
-        maturedBalance += current
-      }
-    })
-
-    // 4. Final Available = Wallet + Matured Goals
-    availableBalance = walletBalance + maturedBalance
+    // Standard User Balance logic: Use the robust SQL RPC function
+    const { data: balanceResult } = await supabase.rpc('get_available_balance', { u_id: user.id })
+    availableBalance = Number(balanceResult || 0)
   }
 
   const savedMethods = await getUserPaymentMethods()

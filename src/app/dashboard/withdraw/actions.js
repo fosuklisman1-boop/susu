@@ -45,9 +45,9 @@ export async function createWithdrawal(prevState, formData) {
     const { data: wallet } = await supabase.from('wallets').select('balance').eq('group_id', groupId).maybeSingle();
     availableBalance = wallet?.balance ? Number(wallet.balance) : 0;
   } else {
-    // 1c. Get Personal Wallet Balance
-    const { data: wallet } = await supabase.from('wallets').select('balance').eq('user_id', user.id).maybeSingle();
-    availableBalance = wallet?.balance ? Number(wallet.balance) : 0;
+    // 1c. Get Personal Available Balance via Robust SQL logic
+    const { data: balanceResult } = await supabase.rpc('get_available_balance', { u_id: user.id });
+    availableBalance = Number(balanceResult || 0);
   }
 
   if (amount > availableBalance) {
