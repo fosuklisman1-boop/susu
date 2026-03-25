@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { UserMinus, Loader2 } from 'lucide-react'
-import { removeMember } from '../../actions'
+import { removeMember } from '../actions'
 import { useToast } from '@/components/ToastProvider'
 
 export default function RemoveMemberButton({ groupId, targetUserId, memberName, hasActivity }) {
