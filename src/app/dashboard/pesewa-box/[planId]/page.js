@@ -39,7 +39,7 @@ export default async function PesewasBoxPlanPage({ params }) {
     const stepDays = plan.frequency === 'daily' ? 1 : plan.frequency === 'weekly' ? 7 : 30
     const planEnd = endDate || new Date(startDate.getTime() + plan.duration_days * 86400000)
     let slotIndex = 1
-    const fullyPaidSlotsCount = Math.floor(totalSaved / periodicAmount)
+    const fullyPaidSlotsCount = Math.floor((totalSaved + 0.01) / periodicAmount)
 
     while (cursor <= planEnd) {
       const dueDate = new Date(cursor)
@@ -63,10 +63,12 @@ export default async function PesewasBoxPlanPage({ params }) {
     }
   }
 
+  const todayStr = today.toISOString().split('T')[0]
   const overdueAmount = Math.max(0, pastExpected - totalSaved)
   const visibleSlots = [
     ...slots.filter(s => s.status === 'Overdue'), 
     ...slots.filter(s => s.status === 'Due Today'),
+    ...slots.filter(s => s.status === 'Paid' && s.dueDate === todayStr),
     ...slots.filter(s => s.status === 'Pending').slice(0, 5)
   ]
 

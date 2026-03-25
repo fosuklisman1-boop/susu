@@ -65,19 +65,38 @@ export default async function PesewaChallengePage() {
     const overdueAmount = rawOverdue > 0 ? rawOverdue : 0
 
     // Mock transactions for current day and next 4 days dynamically
-    activeTransactions = Array.from({ length: 5 }).map((_, i) => {
-      const dayOffset = currentDayIndex + i
+    const allSlots = Array.from({ length: activeChallenge.duration_days }).map((_, i) => {
+      const dayOffset = i + 1
       const dayAmount = dayOffset * baseAmount
+      const cumulativeRequired = baseAmount * (dayOffset * (dayOffset + 1)) / 2
       const dateStr = new Date(start.getTime() + (dayOffset - 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       
+      let status = 'Pending'
+      if (totalSaved >= cumulativeRequired) {
+        status = 'Paid'
+      } else if (dayOffset < currentDayIndex) {
+        status = 'Overdue'
+      } else if (dayOffset === currentDayIndex) {
+        status = 'Due Today'
+      }
+
       return {
         id: dayOffset,
         rawAmount: dayAmount,
         amount: dayAmount.toFixed(2),
         date: dateStr,
-        status: i === 0 ? 'Due Today' : 'Pending'
+        status,
+        cumulativeRequired
       }
-    }).filter(tx => tx.id <= activeChallenge.duration_days)
+    })
+
+    // Filter to show: Overdue, then Due Today, then Paid Today (for feedback), then 5 Pending
+    activeTransactions = [
+      ...allSlots.filter(tx => tx.status === 'Overdue'),
+      ...allSlots.filter(tx => tx.status === 'Due Today'),
+      ...allSlots.filter(tx => tx.status === 'Paid' && tx.date === today.toISOString().split('T')[0]),
+      ...allSlots.filter(tx => tx.status === 'Pending').slice(0, 5)
+    ]
   }
 
   // Fallbacks for scope when activeChallenge is null
@@ -165,26 +184,28 @@ export default async function PesewaChallengePage() {
                   <div 
                   key={tx.id} 
                   style={{ 
-                    background: tx.status === 'Due Today' ? '#fffbeb' : 'white', 
+                    background: tx.status === 'Paid' ? '#f0fdf4' : (tx.status === 'Due Today' ? '#fffbeb' : 'white'), 
                     borderRadius: '16px', 
                     padding: '16px', 
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'space-between', 
                     boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-                    border: tx.status === 'Due Today' ? '1px solid #f59e0b' : '1px solid transparent'
+                    border: tx.status === 'Paid' ? '1px solid #bcf0da' : (tx.status === 'Due Today' ? '1px solid #f59e0b' : '1px solid transparent'),
+                    opacity: tx.status === 'Paid' ? 0.8 : 1
                   }}
                 >
                   
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #4c0519 0%, #170b24 100%)', position: 'relative' }}>
-                      <div style={{ position: 'absolute', bottom: '6px', left: '6px', width: '12px', height: '12px', background: 'rgba(255,255,255,0.3)', borderRadius: '4px' }}></div>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: tx.status === 'Paid' ? '#16a34a' : 'linear-gradient(135deg, #4c0519 0%, #170b24 100%)', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800' }}>
+                      {tx.status === 'Paid' ? '✓' : ''}
+                      {tx.status !== 'Paid' && <div style={{ position: 'absolute', bottom: '6px', left: '6px', width: '12px', height: '12px', background: 'rgba(255,255,255,0.3)', borderRadius: '4px' }}></div>}
                     </div>
                     
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                         <span style={{ 
-                          background: tx.status === 'Overdue' ? '#ef4444' : (tx.status === 'Due Today' ? '#f59e0b' : '#9ca3af'), 
+                          background: tx.status === 'Paid' ? '#16a34a' : (tx.status === 'Overdue' ? '#ef4444' : (tx.status === 'Due Today' ? '#f59e0b' : '#9ca3af')), 
                           color: 'white', 
                           fontSize: '0.65rem', 
                           padding: '2px 8px', 
@@ -193,7 +214,7 @@ export default async function PesewaChallengePage() {
                         }}>
                           {tx.status}
                         </span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Expect to pay</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{tx.status === 'Paid' ? 'Savings recorded' : 'Expect to pay'}</span>
                       </div>
                       <p style={{ fontSize: '0.95rem', fontWeight: '600', color: '#111827' }}>
                         GHS {Number(tx.amount).toFixed(2)} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '400' }}>on {tx.date}</span>
@@ -205,8 +226,8 @@ export default async function PesewaChallengePage() {
                     <input type="hidden" name="planId" value={activeChallenge.id} />
                     <input type="hidden" name="amount" value={tx.rawAmount} />
                     <input type="hidden" name="email" value={user.email} />
-                    <button type="submit" style={{ background: '#ef4444', color: 'white', width: '36px', height: '36px', borderRadius: '8px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                      <ArrowUpRight size={18} />
+                    <button type="submit" disabled={tx.status === 'Paid'} style={{ background: tx.status === 'Paid' ? '#e5e7eb' : '#ef4444', color: 'white', width: '36px', height: '36px', borderRadius: '8px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: tx.status === 'Paid' ? 'not-allowed' : 'pointer' }}>
+                      <ArrowUpRight size={18} color={tx.status === 'Paid' ? '#9ca3af' : 'white'} />
                     </button>
                   </form>
 

@@ -128,24 +128,25 @@ export default function PesewaBoxClient({
                 <div 
                   key={slot.index} 
                   style={{ 
-                    background: slot.status === 'Due Today' ? '#fffbeb' : 'white', 
+                    background: slot.status === 'Paid' ? '#f0fdf4' : (slot.status === 'Due Today' ? '#fffbeb' : 'white'), 
                     borderRadius: '16px', 
                     padding: '16px', 
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'space-between', 
                     boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-                    border: slot.status === 'Due Today' ? '1px solid #f59e0b' : '1px solid transparent'
+                    border: slot.status === 'Paid' ? '1px solid #bcf0da' : (slot.status === 'Due Today' ? '1px solid #f59e0b' : '1px solid transparent'),
+                    opacity: slot.status === 'Paid' ? 0.8 : 1
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #14532d 0%, #166534 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '0.85rem' }}>
-                      #{slot.index}
+                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: slot.status === 'Paid' ? '#16a34a' : 'linear-gradient(135deg, #14532d 0%, #166534 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '0.85rem' }}>
+                      {slot.status === 'Paid' ? '✓' : `#${slot.index}`}
                     </div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                         <span style={{ 
-                          background: slot.status === 'Overdue' ? '#ef4444' : (slot.status === 'Due Today' ? '#f59e0b' : '#9ca3af'), 
+                          background: slot.status === 'Paid' ? '#16a34a' : (slot.status === 'Overdue' ? '#ef4444' : (slot.status === 'Due Today' ? '#f59e0b' : '#9ca3af')), 
                           color: 'white', 
                           fontSize: '0.65rem', 
                           padding: '2px 8px', 
@@ -154,7 +155,7 @@ export default function PesewaBoxClient({
                         }}>
                           {slot.status}
                         </span>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Expect to pay</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{slot.status === 'Paid' ? 'Payment received' : 'Expect to pay'}</span>
                       </div>
                       <p style={{ fontSize: '0.95rem', fontWeight: '600', color: '#111827' }}>
                         GHS {slot.amount.toFixed(2)} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '400' }}>on {slot.dueDate}</span>
@@ -163,10 +164,11 @@ export default function PesewaBoxClient({
                   </div>
 
                   <button 
-                    onClick={() => openPayment(slot.amount, { type: 'slot_payment', slotIndex: slot.index })}
-                    style={{ background: '#ef4444', color: 'white', width: '36px', height: '36px', borderRadius: '8px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    onClick={() => slot.status !== 'Paid' && openPayment(slot.amount, { type: 'slot_payment', slotIndex: slot.index })}
+                    disabled={slot.status === 'Paid'}
+                    style={{ background: slot.status === 'Paid' ? '#e5e7eb' : '#ef4444', color: 'white', width: '36px', height: '36px', borderRadius: '8px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: slot.status === 'Paid' ? 'not-allowed' : 'pointer' }}
                   >
-                    <ArrowUpRight size={18} />
+                    <ArrowUpRight size={18} color={slot.status === 'Paid' ? '#9ca3af' : 'white'} />
                   </button>
                 </div>
               ))}
