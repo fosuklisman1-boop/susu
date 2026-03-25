@@ -69,7 +69,7 @@ export default function SuccessSplash() {
         backgroundImage: 'url("/images/village-bg.png")',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        filter: 'blur(6px) brightness(0.4)',
+        filter: 'blur(8px) brightness(0.35)',
         position: 'absolute',
         inset: 0,
         zIndex: 0
@@ -79,31 +79,29 @@ export default function SuccessSplash() {
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: 'radial-gradient(circle at center, transparent 0%, rgba(15, 23, 42, 0.8) 100%)',
+        background: 'radial-gradient(circle at center, transparent 0%, rgba(15, 23, 42, 0.9) 100%)',
         zIndex: 1
       }} />
 
-      <div className="animation-wrapper" style={{ position: 'relative', zIndex: 10, textAlign: 'center' }}>
-        <div style={{ marginBottom: '40px' }}>
-          <h2 style={{ color: 'white', fontSize: '2.5rem', fontWeight: '800', marginBottom: '8px', letterSpacing: '-0.04em', textShadow: '0 0 20px rgba(255,215,0,0.3)' }}>
-            Savings Success!
+      <div className="animation-wrapper" style={{ position: 'relative', zIndex: 10, textAlign: 'center', width: '100%', maxWidth: '500px', padding: '0 20px' }}>
+        <div style={{ marginBottom: '40px', animation: 'fadeInDown 0.8s ease-out' }}>
+          <h2 style={{ color: 'white', fontSize: '2.4rem', fontWeight: '900', marginBottom: '8px', letterSpacing: '-0.05em', textShadow: '0 0 30px rgba(251, 191, 36, 0.4)' }}>
+            Welcome to the Family!
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            Empowering Your Future
+          <p style={{ color: '#fbbf24', fontSize: '0.85rem', fontWeight: '700', letterSpacing: '0.15em', textTransform: 'uppercase', opacity: 0.9 }}>
+            Empowering Your Savings Journey
           </p>
         </div>
 
         <div className="coin-scene">
-          {/* Light Trails / Particle Particles */}
           <div className="particles">
             {[...Array(6)].map((_, i) => (
               <div key={i} className={`particle p${i+1}`} />
             ))}
           </div>
 
-          {/* Ultra-Modern Floating Coin */}
           <div className="modern-coin">
-            <svg width="200" height="200" viewBox="0 0 200 200">
+            <svg width="180" height="180" viewBox="0 0 200 200">
               <defs>
                 <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#fbbf24" />
@@ -115,33 +113,42 @@ export default function SuccessSplash() {
                   <feComposite in="SourceGraphic" in2="blur" operator="over" />
                 </filter>
               </defs>
-              
-              {/* Outer Glass Ring */}
               <circle cx="100" cy="100" r="90" fill="rgba(251, 191, 36, 0.1)" stroke="rgba(255, 255, 255, 0.2)" strokeWidth="0.5" />
-              
-              {/* Main Coin Body */}
               <circle cx="100" cy="100" r="80" fill="url(#goldGradient)" stroke="#fef3c7" strokeWidth="1" filter="url(#glow)" />
-              
-              {/* Internal Glassmorphism Disc */}
               <circle cx="100" cy="100" r="65" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="0.5" />
-              
-              {/* Circuitry Patterns */}
               <g stroke="#fef3c7" strokeWidth="0.5" fill="none" opacity="0.6">
                 <path d="M100 45 V 55 M100 145 V 155 M45 100 H 55 M145 100 H 155" />
                 <circle cx="100" cy="100" r="55" strokeDasharray="10 20" />
                 <path d="M70 70 L 80 80 M120 120 L 130 130 M70 130 L 80 120 M130 70 L 120 80" />
               </g>
-
-              {/* Central Symbol */}
-              <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fontSize="60" fontWeight="900" fill="#451a03" style={{ textShadow: '0 0 10px rgba(251, 191, 36, 0.5)' }}>₵</text>
-              
-              {/* Floating Shine */}
-              <circle cx="60" cy="60" r="10" fill="white" opacity="0.2" filter="blur(5px)" />
+              <text x="50%" y="54%" dominantBaseline="middle" textAnchor="middle" fontSize="60" fontWeight="900" fill="#451a03">₵</text>
             </svg>
           </div>
         </div>
 
-        <p style={{ color: 'rgba(255,255,255,0.8)', marginTop: '60px', fontSize: '1.2rem', fontWeight: '400', maxWidth: '350px', lineHeight: '1.6', margin: '60px auto 0' }}>
+        {/* Features Showcase */}
+        <div style={{ marginTop: '50px', display: 'flex', justifyContent: 'center', gap: '30px' }}>
+          {[
+            { label: 'Pesewa Box', icon: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5', color: '#10b981' },
+            { label: 'Challenges', icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', color: '#f59e0b' },
+            { label: 'Group Savings', icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm14 14v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75', color: '#ef4444' }
+          ].map((f, i) => (
+            <div key={f.label} className="feature-item" style={{ animationDelay: `${1.2 + i * 0.25}s` }}>
+              <div style={{ 
+                width: '60px', height: '60px', borderRadius: '20px', background: 'rgba(255,255,255,0.05)', 
+                border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '12px', transition: 'all 0.3s'
+              }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={f.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={f.icon} />
+                </svg>
+              </div>
+              <p style={{ color: 'white', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.85 }}>{f.label}</p>
+            </div>
+          ))}
+        </div>
+
+        <p style={{ color: 'rgba(255,255,255,0.4)', marginTop: '45px', fontSize: '0.85rem', fontWeight: '500', fontStyle: 'italic', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '20px' }}>
            High-tech modular savings for the modern Ghanaian dreamer.
         </p>
       </div>
@@ -165,14 +172,23 @@ export default function SuccessSplash() {
           display: flex;
           justify-content: center;
           align-items: center;
-          height: 300px;
+          height: 240px;
         }
 
         .modern-coin {
           animation: float 4s ease-in-out infinite, rotate3d 10s linear infinite;
           transform-style: preserve-3d;
           perspective: 1000px;
-          filter: drop-shadow(0 20px 40px rgba(251, 191, 36, 0.2));
+          filter: drop-shadow(0 20px 40px rgba(251, 191, 36, 0.3));
+        }
+
+        .feature-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          opacity: 0;
+          transform: translateY(15px);
+          animation: fadeInUp 0.6s ease-out forwards;
         }
 
         .particles {
@@ -200,7 +216,7 @@ export default function SuccessSplash() {
 
         @keyframes float {
           0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-30px); }
+          50% { transform: translateY(-25px); }
         }
 
         @keyframes rotate3d {
@@ -208,17 +224,26 @@ export default function SuccessSplash() {
           100% { transform: rotateY(360deg); }
         }
 
+        @keyframes fadeInUp {
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInDown {
+          from { opacity: 0; transform: translateY(-20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
         @keyframes trail {
           0% { transform: translateX(0); opacity: 0; }
-          20% { opacity: 0.6; }
-          80% { opacity: 0.6; }
+          20% { opacity: 0.4; }
+          80% { opacity: 0.4; }
           100% { transform: translateX(500px); opacity: 0; }
         }
 
         @keyframes trailReverse {
           0% { transform: translateX(0); opacity: 0; }
-          20% { opacity: 0.6; }
-          80% { opacity: 0.6; }
+          20% { opacity: 0.4; }
+          80% { opacity: 0.4; }
           100% { transform: translateX(-500px); opacity: 0; }
         }
       `}</style>
