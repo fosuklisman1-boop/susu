@@ -3,8 +3,8 @@
 CREATE OR REPLACE FUNCTION get_available_balance(u_id UUID)
 RETURNS DECIMAL AS $$
 DECLARE
-    wallet_bal DECIMAL;
-    matured_bal DECIMAL;
+    wallet_bal DECIMAL := 0;
+    matured_bal DECIMAL := 0;
 BEGIN
     -- Wallet balance from direct top-ups minus standalone withdrawals
     SELECT COALESCE(balance, 0) INTO wallet_bal FROM wallets WHERE user_id = u_id;
@@ -23,7 +23,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION get_locked_balance(u_id UUID)
 RETURNS DECIMAL AS $$
 DECLARE
-    locked_bal DECIMAL;
+    locked_bal DECIMAL := 0;
 BEGIN
     SELECT COALESCE(SUM(current_balance), 0) INTO locked_bal 
     FROM susu_plans 
@@ -33,5 +33,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 3. Update RLS to allow users to call these functions if needed (though usually accessed via service role or RPC)
--- These are SECURITY DEFINER so they bypass RLS based on the function owner's permissions, but only return the calling user's data.
+-- 3. Explicitly Grant Execution Permissions 
+-- Required for calling from the supabase-js client
+GRANT EXECUTE ON FUNCTION get_available_balance(UUID) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION get_locked_balance(UUID) TO authenticated, service_role;

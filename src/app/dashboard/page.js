@@ -11,8 +11,11 @@ export default async function DashboardPage() {
   }
 
   // 1. Fetch available and locked balances via SQL RPC
-  const { data: availableBalance } = await supabase.rpc('get_available_balance', { u_id: user.id })
-  const { data: lockedBalance } = await supabase.rpc('get_locked_balance', { u_id: user.id })
+  const { data: availableBalance, error: availError } = await supabase.rpc('get_available_balance', { u_id: user.id })
+  const { data: lockedBalance, error: lockError } = await supabase.rpc('get_locked_balance', { u_id: user.id })
+
+  if (availError) console.error('Error fetching available balance:', availError)
+  if (lockError) console.error('Error fetching locked balance:', lockError)
 
   // 2. Fetch ALL user's active plans for UI display
   const { data: allPlans } = await supabase
