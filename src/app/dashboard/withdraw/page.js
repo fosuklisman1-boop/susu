@@ -1,3 +1,7 @@
+import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation'
+import WithdrawClient from './WithdrawClient'
+import { getUserPaymentMethods } from '@/app/actions/user'
 import { getUserBalances } from '@/utils/balance'
 
 export default async function WithdrawPage({ searchParams }) {
