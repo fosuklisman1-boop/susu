@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import DashboardClient from './DashboardClient'
+import { getUserBalances } from '@/utils/balance'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -10,20 +11,8 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  // 1. Fetch available and locked balances via SQL RPC
-  const { data: availableBalance, error: availError } = await supabase.rpc('get_available_balance', { u_id: user.id })
-  const { data: lockedBalance, error: lockError } = await supabase.rpc('get_locked_balance', { u_id: user.id })
-
-  if (availError) console.error('Error fetching available balance:', availError)
-  if (lockError) console.error('Error fetching locked balance:', lockError)
-
-  // 2. Fetch ALL user's active plans for UI display
-  const { data: allPlans } = await supabase
-    .from('susu_plans')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .order('created_at', { ascending: false })
+  // 1. Fetch available and locked balances via refined JS utility
+  const { availableBalance, lockedBalance, allPlans } = await getUserBalances(user.id)
 
   const planSavings = {}
   const activePlans = []

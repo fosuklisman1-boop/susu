@@ -1,7 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
-import WithdrawClient from './WithdrawClient'
-import { getUserPaymentMethods } from '@/app/actions/user'
+import { getUserBalances } from '@/utils/balance'
 
 export default async function WithdrawPage({ searchParams }) {
   const { groupId } = await searchParams
@@ -56,9 +53,9 @@ export default async function WithdrawPage({ searchParams }) {
     const totalOut = (grpWithdrawals || []).reduce((sum, w) => sum + Number(w.amount), 0)
     availableBalance = Math.max(totalIn - totalOut, 0)
   } else {
-    // Standard User Balance logic: Use the robust SQL RPC function
-    const { data: balanceResult } = await supabase.rpc('get_available_balance', { u_id: user.id })
-    availableBalance = Number(balanceResult || 0)
+    // Standard User Balance logic: Use the robust and centralized JS utility
+    const { availableBalance: userBal } = await getUserBalances(user.id)
+    availableBalance = userBal
   }
 
   const savedMethods = await getUserPaymentMethods()
