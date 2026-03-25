@@ -125,14 +125,33 @@ export default function PesewaBoxClient({
             {/* Payment Slot List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
               {visibleSlots.map((slot) => (
-                <div key={slot.index} style={{ background: 'white', borderRadius: '16px', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                <div 
+                  key={slot.index} 
+                  style={{ 
+                    background: slot.status === 'Due Today' ? '#fffbeb' : 'white', 
+                    borderRadius: '16px', 
+                    padding: '16px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between', 
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                    border: slot.status === 'Due Today' ? '1px solid #f59e0b' : '1px solid transparent'
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                     <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #14532d 0%, #166534 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '0.85rem' }}>
                       #{slot.index}
                     </div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <span style={{ background: slot.status === 'Overdue' ? '#ef4444' : '#f59e0b', color: 'white', fontSize: '0.65rem', padding: '2px 8px', borderRadius: '12px', fontWeight: '600' }}>
+                        <span style={{ 
+                          background: slot.status === 'Overdue' ? '#ef4444' : (slot.status === 'Due Today' ? '#f59e0b' : '#9ca3af'), 
+                          color: 'white', 
+                          fontSize: '0.65rem', 
+                          padding: '2px 8px', 
+                          borderRadius: '12px', 
+                          fontWeight: '600' 
+                        }}>
                           {slot.status}
                         </span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Expect to pay</span>

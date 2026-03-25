@@ -45,12 +45,15 @@ export default async function PesewasBoxPlanPage({ params }) {
       const dueDate = new Date(cursor)
       const slotDateStr = dueDate.toISOString().split('T')[0]
       const isPast = dueDate < today
+      const isToday = dueDate.getTime() === today.getTime()
       
       let status = 'Pending'
       if (slotIndex <= fullyPaidSlotsCount) {
         status = 'Paid'
       } else if (isPast) {
         status = 'Overdue'
+      } else if (isToday) {
+        status = 'Due Today'
       }
 
       if (isPast) pastExpected += periodicAmount
@@ -61,7 +64,11 @@ export default async function PesewasBoxPlanPage({ params }) {
   }
 
   const overdueAmount = Math.max(0, pastExpected - totalSaved)
-  const visibleSlots = [...slots.filter(s => s.status === 'Overdue'), ...slots.filter(s => s.status === 'Pending').slice(0, 5)]
+  const visibleSlots = [
+    ...slots.filter(s => s.status === 'Overdue'), 
+    ...slots.filter(s => s.status === 'Due Today'),
+    ...slots.filter(s => s.status === 'Pending').slice(0, 5)
+  ]
 
   // Still fetch contributions for the history list
   const { data: historyContributions } = await supabase

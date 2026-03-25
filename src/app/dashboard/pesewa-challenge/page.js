@@ -162,34 +162,53 @@ export default async function PesewaChallengePage() {
           {/* Transaction List */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {activeTransactions.map((tx) => (
-              <div key={tx.id} style={{ background: 'white', borderRadius: '16px', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #4c0519 0%, #170b24 100%)', position: 'relative' }}>
-                    <div style={{ position: 'absolute', bottom: '6px', left: '6px', width: '12px', height: '12px', background: 'rgba(255,255,255,0.3)', borderRadius: '4px' }}></div>
-                  </div>
+                  <div 
+                  key={tx.id} 
+                  style={{ 
+                    background: tx.status === 'Due Today' ? '#fffbeb' : 'white', 
+                    borderRadius: '16px', 
+                    padding: '16px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between', 
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                    border: tx.status === 'Due Today' ? '1px solid #f59e0b' : '1px solid transparent'
+                  }}
+                >
                   
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <span style={{ background: tx.status === 'Overdue' ? '#ef4444' : '#f59e0b', color: 'white', fontSize: '0.65rem', padding: '2px 8px', borderRadius: '12px', fontWeight: '600' }}>
-                        {tx.status}
-                      </span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Expect to pay</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #4c0519 0%, #170b24 100%)', position: 'relative' }}>
+                      <div style={{ position: 'absolute', bottom: '6px', left: '6px', width: '12px', height: '12px', background: 'rgba(255,255,255,0.3)', borderRadius: '4px' }}></div>
                     </div>
-                    <p style={{ fontSize: '0.95rem', fontWeight: '600', color: '#111827' }}>
-                      GHS {Number(tx.amount).toFixed(2)} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '400' }}>on {tx.date}</span>
-                    </p>
+                    
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <span style={{ 
+                          background: tx.status === 'Overdue' ? '#ef4444' : (tx.status === 'Due Today' ? '#f59e0b' : '#9ca3af'), 
+                          color: 'white', 
+                          fontSize: '0.65rem', 
+                          padding: '2px 8px', 
+                          borderRadius: '12px', 
+                          fontWeight: '600' 
+                        }}>
+                          {tx.status}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Expect to pay</span>
+                      </div>
+                      <p style={{ fontSize: '0.95rem', fontWeight: '600', color: '#111827' }}>
+                        GHS {Number(tx.amount).toFixed(2)} <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: '400' }}>on {tx.date}</span>
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                <form action="/api/paystack/initialize" method="POST">
-                  <input type="hidden" name="planId" value={activeChallenge.id} />
-                  <input type="hidden" name="amount" value={tx.rawAmount} />
-                  <input type="hidden" name="email" value={user.email} />
-                  <button type="submit" style={{ background: '#ef4444', color: 'white', width: '36px', height: '36px', borderRadius: '8px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                    <ArrowUpRight size={18} />
-                  </button>
-                </form>
+                  <form action="/api/paystack/initialize" method="POST">
+                    <input type="hidden" name="planId" value={activeChallenge.id} />
+                    <input type="hidden" name="amount" value={tx.rawAmount} />
+                    <input type="hidden" name="email" value={user.email} />
+                    <button type="submit" style={{ background: '#ef4444', color: 'white', width: '36px', height: '36px', borderRadius: '8px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                      <ArrowUpRight size={18} />
+                    </button>
+                  </form>
 
               </div>
             ))}
