@@ -6,7 +6,7 @@ import { PlusCircle, Target, Users, CheckCircle, ChevronRight, Lock } from 'luci
 import UnifiedPaymentModal from '@/components/UnifiedPaymentModal'
 import ReferralCard from '@/components/ReferralCard'
 
-export default function DashboardClient({ user, activePlans, planSavings, availableBalance }) {
+export default function DashboardClient({ user, activePlans, planSavings, availableBalance, lockedBalance = 0 }) {
   const [isTopUpOpen, setIsTopUpOpen] = useState(false)
 
   return (
@@ -29,15 +29,17 @@ export default function DashboardClient({ user, activePlans, planSavings, availa
 
         <div className="balance-amounts">
           <div>
-            <p style={{ fontSize: '0.75rem', opacity: 0.9, marginBottom: '4px' }}>Total Savings</p>
+            <p style={{ fontSize: '0.75rem', opacity: 0.9, marginBottom: '4px' }}>Available Balance</p>
             <h1 style={{ fontSize: '2.2rem', fontWeight: '800', letterSpacing: '-0.5px' }}>
               <span style={{ fontSize: '1.2rem', fontWeight: '600', marginRight: '4px' }}>GHS</span>
               {availableBalance.toFixed(2)}
             </h1>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <p style={{ fontSize: '0.75rem', opacity: 0.8, marginBottom: '4px' }}>Locked</p>
-            <h1 style={{ fontSize: '1.1rem', fontWeight: '700', opacity: 0.9 }}>GHS 0.00</h1>
+            <p style={{ fontSize: '0.75rem', opacity: 0.8, marginBottom: '4px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+              Locked <Lock size={10} />
+            </p>
+            <h1 style={{ fontSize: '1.1rem', fontWeight: '700', opacity: 0.9 }}>GHS {lockedBalance.toFixed(2)}</h1>
           </div>
         </div>
 
@@ -114,18 +116,23 @@ export default function DashboardClient({ user, activePlans, planSavings, availa
               const progress = Math.min((saved / Number(plan.target_amount)) * 100, 100)
               return (
                 <Link key={plan.id} href={`/dashboard/pesewa-box/${plan.id}`} style={{ textDecoration: 'none' }}>
-                  <div className="sub-card" style={{ padding: '16px', cursor: 'pointer', margin: 0 }}>
+                  <div className="sub-card" style={{ padding: '16px', cursor: 'pointer', margin: 0, position: 'relative' }}>
+                    {progress < 100 && (
+                      <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', alignItems: 'center', gap: '4px', background: '#fef2f2', color: '#ef4444', padding: '2px 8px', borderRadius: '12px', fontSize: '0.65rem', fontWeight: 'bold' }}>
+                        <Lock size={10} /> Locked
+                      </div>
+                    )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
-                      <div className="card-icon-box" style={{ background: '#f0fdf4', color: '#16a34a', width: '44px', height: '44px' }}>
-                        <CheckCircle size={22} />
+                      <div className="card-icon-box" style={{ background: progress >= 100 ? '#f0fdf4' : '#f3f4f6', color: progress >= 100 ? '#16a34a' : '#9ca3af', width: '44px', height: '44px' }}>
+                        {progress >= 100 ? <CheckCircle size={22} /> : <Lock size={20} />}
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                           <h4 style={{ fontSize: '0.95rem', fontWeight: '700' }}>{plan.name || 'Savings Plan'}</h4>
-                          <span style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--primary)' }}>{progress.toFixed(0)}%</span>
+                          <span style={{ fontSize: '0.85rem', fontWeight: '700', color: progress >= 100 ? '#16a34a' : 'var(--primary)' }}>{progress.toFixed(0)}%</span>
                         </div>
                         <div style={{ height: '6px', background: '#f3f4f6', borderRadius: '3px', marginBottom: '8px', overflow: 'hidden' }}>
-                          <div style={{ width: `${progress}%`, background: 'var(--primary)', height: '100%', borderRadius: '3px' }}></div>
+                          <div style={{ width: `${progress}%`, background: progress >= 100 ? '#16a34a' : 'var(--primary)', height: '100%', borderRadius: '3px' }}></div>
                         </div>
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                           GHS {saved.toFixed(2)} saved <span style={{ opacity: 0.5 }}>&bull;</span> Target GHS {Number(plan.target_amount).toFixed(0)}

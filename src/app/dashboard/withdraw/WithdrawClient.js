@@ -59,7 +59,9 @@ export default function WithdrawClient({ availableBalance, userEmail, groupId, g
             <span style={{ fontSize: '1.2rem', fontWeight: '600', marginRight: '6px' }}>GHS</span>
             {availableBalance.toFixed(2)}
           </h1>
-          <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>Funds from completed saving cycles and verified contributions.</p>
+          <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+            {!isGroup ? 'Funds from matured saving goals (100% reached) and direct top-ups.' : 'Available funds currently in the group pot.'}
+          </p>
         </div>
 
         {state?.success ? (
